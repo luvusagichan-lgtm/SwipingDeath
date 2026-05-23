@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
@@ -262,154 +262,16 @@
   </main>
 
   <script>
+    const CONFIG_URLS = {
+      story: "submissions/shinigami/config/shinigami_story_config.json",
+      types: "submissions/shinigami/config/shinigami_16types_config.json"
+    };
+
     const axes = {
       QI: { left: "Q 数量主义", right: "I 个体主义", score: 0 },
       SP: { left: "S 自我圈层", right: "P 公共中立", score: 0 },
       FN: { left: "F 长期结果", right: "N 当下止损", score: 0 },
       RB: { left: "R 规则服从", right: "B 规则突破", score: 0 }
-    };
-
-    const cards = [
-      {
-        tag: "事件背景 01",
-        title: "夜班刚开始，A-17 号列车刹车失灵",
-        body: "主线有 5 名维修工。\n岔道上有 1 名轨道医生，正在抢修急救通道。\n你只负责裁决，不负责解释。",
-        left: { label: "记录：继续收集信息", effects: { RB: +4 } },
-        right: { label: "记录：立刻进入裁决流程", effects: { RB: -4 } }
-      },
-      {
-        tag: "决策卡 02",
-        title: "第一裁决：拨向哪条轨道？",
-        body: "现在切轨能救一侧。另一侧会死。",
-        left: { label: "拨向岔道（死 1，救 5）", effects: { QI: +12, FN: +8, RB: -4 } },
-        right: { label: "维持主线（死 5，保 1）", effects: { QI: -12, FN: -8, RB: +4 } }
-      },
-      {
-        tag: "求情卡 03",
-        title: "岔道医生发来语音",
-        body: "“今晚还有 4 台大手术排队。我死了，明天会多死很多人。”",
-        left: { label: "采信医生的未来价值", effects: { FN: +12, QI: +8 } },
-        right: { label: "拒绝用未来押注当下命", effects: { FN: -12, QI: -4 } }
-      },
-      {
-        tag: "求情卡 04",
-        title: "主线维修班长提交名单",
-        body: "“5 个人里有我弟弟。还有 2 个实习生，家里全靠他们。”",
-        left: { label: "身份关系应被考虑", effects: { SP: +12, QI: -4 } },
-        right: { label: "关系不影响判决", effects: { SP: -12, RB: +4 } }
-      },
-      {
-        tag: "决策卡 05",
-        title: "执行前二次确认",
-        body: "系统提示：可按《紧急调度条例》走程序，或手动覆盖。",
-        left: { label: "按流程走（即使更慢）", effects: { RB: +12, FN: -4 } },
-        right: { label: "手动覆盖先救命", effects: { RB: -12, FN: +4 } }
-      },
-      {
-        tag: "事件反馈 06",
-        title: "列车停下了，但事故舆论炸裂",
-        body: "社媒把你称为“冷血分母党”或“道德绑架者”。\n上级要求你继续值班，下一辆已经进隧道。",
-        left: { label: "接受标签，继续执行", effects: { RB: +4 } },
-        right: { label: "拒绝标签，按直觉来", effects: { RB: -4 } }
-      },
-      {
-        tag: "事件背景 07",
-        title: "B-04 号车：主线是退休老兵 3 人，岔道是少年犯 1 人",
-        body: "少年犯正在改造期，老兵是城市勋章获得者。",
-        left: { label: "社会贡献应计入", effects: { FN: +8, SP: +4 } },
-        right: { label: "身份历史不应折价生命", effects: { SP: -8, RB: +4 } }
-      },
-      {
-        tag: "决策卡 08",
-        title: "第二裁决：你会让谁死？",
-        body: "你只能保一边。",
-        left: { label: "保 3 名老兵，弃 1 人", effects: { QI: +8, SP: +8 } },
-        right: { label: "保 1 名少年犯，弃 3 人", effects: { QI: -8, SP: -8 } }
-      },
-      {
-        tag: "求情卡 09",
-        title: "少年犯请求",
-        body: "“我欠社会很多，但我刚签了骨髓捐献，明天配型成功就能救人。”",
-        left: { label: "相信可逆转的未来", effects: { FN: +12, QI: -4 } },
-        right: { label: "不拿可能性做筹码", effects: { FN: -12, RB: +4 } }
-      },
-      {
-        tag: "求情卡 10",
-        title: "老兵家属请求",
-        body: "“他们守过城，现在该城市守他们。”",
-        left: { label: "优先回报既有牺牲者", effects: { SP: +12, RB: +4 } },
-        right: { label: "功勋不改变裁决规则", effects: { SP: -12, RB: +4 } }
-      },
-      {
-        tag: "决策卡 11",
-        title: "你发现系统有漏洞",
-        body: "按规则上报可在 20 分钟后修复。立刻越权可现在修，但留后门风险。",
-        left: { label: "先上报，维持程序", effects: { RB: +12, FN: -8 } },
-        right: { label: "先越权，事后补报告", effects: { RB: -12, FN: +8 } }
-      },
-      {
-        tag: "事件反馈 12",
-        title: "第三列进站：主线是 2 名科研人员，岔道是 2 名普通乘客",
-        body: "人数持平，身份争议极大。你没有更多时间。",
-        left: { label: "按社会效用做区分", effects: { QI: +4, FN: +8 } },
-        right: { label: "按个体等价不做区分", effects: { QI: -4, SP: -8 } }
-      },
-      {
-        tag: "求情卡 13",
-        title: "普通乘客发来一句话",
-        body: "“我们只是普通人，所以更容易被放弃吗？”",
-        left: { label: "普通人的当下不能被牺牲", effects: { SP: -8, FN: -4 } },
-        right: { label: "角色效用必须纳入衡量", effects: { SP: +8, FN: +4 } }
-      },
-      {
-        tag: "求情卡 14",
-        title: "科研人员发来一句话",
-        body: "“我们在做抗灾材料，明年可能救下几万人。”",
-        left: { label: "为未来押注一次", effects: { FN: +12, QI: +8 } },
-        right: { label: "未来不该凌驾眼前生命", effects: { FN: -12, QI: -8 } }
-      },
-      {
-        tag: "终局裁决 15",
-        title: "值班结束前最后一次签字",
-        body: "你必须给系统留下一条元规则：\n以后类似情况，优先遵守什么？",
-        left: { label: "优先规则与可追责性", effects: { RB: +12, SP: -4 } },
-        right: { label: "优先结果与可挽回性", effects: { RB: -12, FN: +8 } }
-      }
-    ];
-
-    const archetypes = {
-      "A1": {
-        name: "秩序工程师",
-        desc: "你倾向把生命决策纳入可审计系统：先求整体可复制，再求局部最优。"
-      },
-      "A2": {
-        name: "铁律守夜人",
-        desc: "你更信任程序正义，宁可承受短期痛感，也不愿让裁决沦为个人直觉。"
-      },
-      "B1": {
-        name: "破局功利家",
-        desc: "你会主动打破流程，优先保住更多可延续的生命与社会功能。"
-      },
-      "B2": {
-        name: "冷静止损者",
-        desc: "你反对幻想式押注，更重视立刻可验证的损失控制。"
-      },
-      "C1": {
-        name: "关系守护者",
-        desc: "你承认责任与关系网的道德重量，裁决中会保留“自己人”维度。"
-      },
-      "C2": {
-        name: "个体保全派",
-        desc: "你抵触把人压成统计单位，愿意为“不可替代的一个人”承担代价。"
-      },
-      "D1": {
-        name: "中立调停者",
-        desc: "你追求一视同仁，不让身份、功勋或标签改变生命价值。"
-      },
-      "D2": {
-        name: "逆流见证人",
-        desc: "你常在多数意见外坚持异议，优先守住当下具体的人。"
-      }
     };
 
     const els = {
@@ -434,6 +296,9 @@
       restartBtn: document.getElementById("restartBtn")
     };
 
+    let cards = [];
+    let cardIndexById = {};
+    let typeConfigs = {};
     let idx = 0;
     let dragging = false;
     let startX = 0;
@@ -444,9 +309,55 @@
       return Math.min(max, Math.max(min, v));
     }
 
+    async function loadJson(url) {
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error(`${url} 加载失败：${response.status}`);
+      }
+      return response.json();
+    }
+
+    async function loadConfigs() {
+      els.progress.textContent = "正在读取配置...";
+      const [storyConfig, typeConfig] = await Promise.all([
+        loadJson(CONFIG_URLS.story),
+        loadJson(CONFIG_URLS.types)
+      ]);
+
+      cards = Array.isArray(storyConfig.cards) ? storyConfig.cards : [];
+      typeConfigs = typeConfig.types || {};
+      cardIndexById = Object.fromEntries(cards.map((card, index) => [String(card.id), index]));
+
+      if (!cards.length) {
+        throw new Error("剧情配置里没有可用卡牌");
+      }
+      if (!Object.keys(typeConfigs).length) {
+        throw new Error("人格配置里没有可用类型");
+      }
+    }
+
+    function showConfigError(error) {
+      els.tag.textContent = "配置读取失败";
+      els.title.textContent = "无法加载玩法配置";
+      els.body.textContent = [
+        "请确认以下文件已经部署到 GitHub Pages：",
+        CONFIG_URLS.story,
+        CONFIG_URLS.types,
+        "",
+        error.message
+      ].join("\n");
+      els.leftChoice.textContent = "";
+      els.rightChoice.textContent = "";
+      els.btnLeft.textContent = "配置未加载";
+      els.btnRight.textContent = "配置未加载";
+      els.btnLeft.disabled = true;
+      els.btnRight.disabled = true;
+      els.progress.textContent = "配置错误";
+    }
+
     function applyEffects(effects) {
-      Object.entries(effects).forEach(([k, delta]) => {
-        if (axes[k]) axes[k].score += delta;
+      Object.entries(effects || {}).forEach(([k, delta]) => {
+        if (axes[k]) axes[k].score += Number(delta) || 0;
       });
     }
 
@@ -454,7 +365,6 @@
       const rows = Object.entries(axes).map(([k, axis]) => {
         const score = clamp(axis.score, -60, 60);
         const width = Math.abs(score) / 60 * 100;
-        const strong = score >= 0 ? axis.left : axis.right;
         return `
           <div class="axis-row">
             <span>${axis.left}</span>
@@ -473,33 +383,43 @@
         return;
       }
       const card = cards[idx];
-      els.tag.textContent = card.tag;
-      els.title.textContent = card.title;
-      els.body.textContent = card.body;
-      els.leftChoice.textContent = "← " + card.left.label;
-      els.rightChoice.textContent = card.right.label + " →";
-      els.btnLeft.textContent = "左：" + card.left.label;
-      els.btnRight.textContent = "右：" + card.right.label;
-      els.leftFlag.textContent = "左：" + card.left.label;
-      els.rightFlag.textContent = "右：" + card.right.label;
+      const left = card.left || {};
+      const right = card.right || {};
+      els.tag.textContent = card.tag || `裁决 ${card.id || idx + 1}`;
+      els.title.textContent = card.title || card.text || "未命名裁决";
+      els.body.textContent = card.body || card.text || "";
+      els.leftChoice.textContent = "← " + (left.label || "左选项");
+      els.rightChoice.textContent = (right.label || "右选项") + " →";
+      els.btnLeft.textContent = "左：" + (left.label || "左选项");
+      els.btnRight.textContent = "右：" + (right.label || "右选项");
+      els.leftFlag.textContent = "左：" + (left.label || "左选项");
+      els.rightFlag.textContent = "右：" + (right.label || "右选项");
       els.progress.textContent = `第 ${idx + 1} / ${cards.length} 卡`;
       els.card.style.opacity = "1";
       els.card.style.transform = "translateX(0px) rotate(0deg)";
       els.card.classList.remove("show-left", "show-right");
     }
 
+    function nextIndexFor(card, choice) {
+      const nextId = choice.next || card.autoNext;
+      if (nextId && Object.prototype.hasOwnProperty.call(cardIndexById, String(nextId))) {
+        return cardIndexById[String(nextId)];
+      }
+      return idx + 1;
+    }
+
     function choose(side) {
       if (idx >= cards.length) return;
       const card = cards[idx];
-      const choice = side === "left" ? card.left : card.right;
-      applyEffects(choice.effects || {});
+      const choice = side === "left" ? card.left || {} : card.right || {};
+      applyEffects(choice.effects);
 
       const dir = side === "left" ? -1 : 1;
       els.card.style.transform = `translateX(${dir * 420}px) rotate(${dir * 12}deg)`;
       els.card.style.opacity = "0";
 
       setTimeout(() => {
-        idx += 1;
+        idx = nextIndexFor(card, choice);
         renderAxes();
         renderCard();
       }, 150);
@@ -513,17 +433,15 @@
       return q + s + f + r;
     }
 
-    function getArchetype() {
-      const social = axes.QI.score + axes.SP.score;
-      const method = axes.FN.score + axes.RB.score;
-      const certainty = ["QI", "SP", "FN", "RB"].reduce((acc, key) => acc + Math.abs(axes[key].score), 0);
-
-      let key = "A1";
-      if (social >= 0 && method >= 0) key = certainty >= 120 ? "A1" : "A2";
-      if (social >= 0 && method < 0) key = certainty >= 120 ? "B1" : "B2";
-      if (social < 0 && method >= 0) key = certainty >= 120 ? "C1" : "C2";
-      if (social < 0 && method < 0) key = certainty >= 120 ? "D1" : "D2";
-      return archetypes[key];
+    function getTypeConfig(code) {
+      return typeConfigs[code] || {
+        name: "未命名人格",
+        nameEn: code,
+        headline: "你的人格类型是：",
+        slogan: "",
+        desc: "当前分值组合没有找到对应的人格配置。",
+        shareText: `我测出${code}。`
+      };
     }
 
     function axisSummary() {
@@ -545,18 +463,19 @@
       document.getElementById("board").style.display = "none";
       document.querySelector(".controls").style.display = "none";
       const code = getTypeCode();
-      const type = getArchetype();
+      const type = getTypeConfig(code);
       els.result.classList.add("show");
-      els.typeName.textContent = type.name;
-      els.typeCode.textContent = `你的四轴代码：${code}`;
-      els.typeDesc.textContent = type.desc;
+      els.typeName.textContent = type.name || code;
+      els.typeCode.textContent = `${type.headline || "你的人格类型是："}${type.nameEn || code}（${code}）`;
+      els.typeDesc.textContent = [type.slogan, type.subline, type.desc].filter(Boolean).join("\n\n");
 
       const share = [
         "【死神值班：电车裁决】",
-        `我的结果：${type.name}（${code}）`,
+        `我的结果：${type.name || code}（${type.nameEn || code}）`,
+        type.shareText || "",
         axisSummary(),
         "你会签下怎样的死亡裁决？"
-      ].join("\n");
+      ].filter(Boolean).join("\n");
       els.shareText.textContent = share;
       els.progress.textContent = "值班结束";
     }
@@ -634,8 +553,17 @@
     els.card.addEventListener("pointerup", onDragEnd);
     els.card.addEventListener("pointercancel", onDragEnd);
 
-    renderAxes();
-    renderCard();
+    async function init() {
+      try {
+        await loadConfigs();
+        renderAxes();
+        renderCard();
+      } catch (error) {
+        showConfigError(error);
+      }
+    }
+
+    init();
   </script>
 </body>
 </html>
