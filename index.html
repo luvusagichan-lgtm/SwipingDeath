@@ -304,9 +304,52 @@
     let startX = 0;
     let offsetX = 0;
     const SWIPE_THRESHOLD = 110;
+    const branchMergeRules = {
+      "10-L": { group: "10", counterpart: "10-R", target: "12" },
+      "10-R": { group: "10", counterpart: "10-L", target: "12" },
+      "17-L": { group: "17", counterpart: "17-R", target: "19" },
+      "17-R": { group: "17", counterpart: "17-L", target: "19" },
+      "24-L": { group: "24", counterpart: "24-R", target: "26", fallbackTarget: "27" },
+      "24-R": { group: "24", counterpart: "24-L", target: "26", fallbackTarget: "27" }
+    };
+    let branchVisitState = {};
 
     function clamp(v, min, max) {
       return Math.min(max, Math.max(min, v));
+    }
+
+    function resetBranchVisitState() {
+      branchVisitState = Object.values(branchMergeRules).reduce((acc, rule) => {
+        acc[rule.group] = { visited: new Set() };
+        return acc;
+      }, {});
+    }
+
+    function hasCardId(cardId) {
+      return Object.prototype.hasOwnProperty.call(cardIndexById, String(cardId));
+    }
+
+    function resolveBranchMergeNext(card) {
+      const rule = branchMergeRules[String(card.id)];
+      if (!rule) {
+        return null;
+      }
+
+      const state = branchVisitState[rule.group] || { visited: new Set() };
+      state.visited.add(String(card.id));
+      branchVisitState[rule.group] = state;
+
+      if (!state.visited.has(rule.counterpart) && hasCardId(rule.counterpart)) {
+        return rule.counterpart;
+      }
+
+      const mergeTarget = hasCardId(rule.target) ? rule.target : rule.fallbackTarget;
+      if (mergeTarget && hasCardId(mergeTarget)) {
+        state.visited.clear();
+        return mergeTarget;
+      }
+
+      return null;
     }
 
     async function loadJson(url) {
@@ -401,8 +444,13 @@
     }
 
     function nextIndexFor(card, choice) {
+      const branchNextId = resolveBranchMergeNext(card);
+      if (branchNextId && hasCardId(branchNextId)) {
+        return cardIndexById[String(branchNextId)];
+      }
+
       const nextId = choice.next || card.autoNext;
-      if (nextId && Object.prototype.hasOwnProperty.call(cardIndexById, String(nextId))) {
+      if (nextId && hasCardId(nextId)) {
         return cardIndexById[String(nextId)];
       }
       return idx + 1;
@@ -483,6 +531,7 @@
     function resetGame() {
       Object.keys(axes).forEach((k) => axes[k].score = 0);
       idx = 0;
+      resetBranchVisitState();
       els.result.classList.remove("show");
       els.card.style.display = "flex";
       document.getElementById("board").style.display = "block";
@@ -556,6 +605,7 @@
     async function init() {
       try {
         await loadConfigs();
+        resetBranchVisitState();
         renderAxes();
         renderCard();
       } catch (error) {
