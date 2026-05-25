@@ -29,6 +29,20 @@
       "license_note": "正式音频上传后补充来源、授权和可用范围。"
     },
     {
+      "id": "sfx-swipe-v01",
+      "path": "assets/audio/sfx/u_nharq4usid-swipe-255512.mp3",
+      "type": "sfx",
+      "tool": "uploaded",
+      "license_note": "用于发牌和用牌随机音效；正式合并前补充来源、授权和可用范围。"
+    },
+    {
+      "id": "sfx-swoosh-v01",
+      "path": "assets/audio/sfx/universfield-swoosh-026-454861.mp3",
+      "type": "sfx",
+      "tool": "uploaded",
+      "license_note": "用于发牌和用牌随机音效；正式合并前补充来源、授权和可用范围。"
+    },
+    {
       "id": "voice-placeholder-v01",
       "path": "assets/audio/voice/.gitkeep",
       "type": "voice",
