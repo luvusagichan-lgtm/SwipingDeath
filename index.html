@@ -269,8 +269,14 @@
 
     const SFX = {
       cardMotion: [
-        "submissions/austin/audio-placeholder-v01/assets/audio/sfx/u_nharq4usid-swipe-255512.mp3",
-        "submissions/austin/audio-placeholder-v01/assets/audio/sfx/universfield-swoosh-026-454861.mp3"
+        {
+          url: "submissions/austin/audio-placeholder-v01/assets/audio/sfx/u_nharq4usid-swipe-255512.mp3",
+          gain: 1.0
+        },
+        {
+          url: "submissions/austin/audio-placeholder-v01/assets/audio/sfx/universfield-swoosh-026-454861.mp3",
+          gain: 0.45
+        }
       ],
       volume: 0.42
     };
@@ -312,11 +318,11 @@
     let startX = 0;
     let offsetX = 0;
     let sfxUnlocked = false;
-    const sfxPool = SFX.cardMotion.map((url) => {
-      const audio = new Audio(url);
+    const sfxPool = SFX.cardMotion.map((sfx) => {
+      const audio = new Audio(sfx.url);
       audio.preload = "auto";
-      audio.volume = SFX.volume;
-      return audio;
+      audio.volume = clamp(SFX.volume * (sfx.gain || 1), 0, 1);
+      return { audio, gain: sfx.gain || 1 };
     });
     const SWIPE_THRESHOLD = 110;
     const branchMergeRules = {
@@ -335,7 +341,7 @@
 
     function playCardMotionSfx() {
       if (!sfxPool.length) return;
-      const audio = sfxPool[Math.floor(Math.random() * sfxPool.length)];
+      const { audio } = sfxPool[Math.floor(Math.random() * sfxPool.length)];
       audio.pause();
       audio.currentTime = 0;
       audio.play().catch(() => {});
@@ -344,7 +350,7 @@
     function unlockSfx() {
       if (sfxUnlocked || !sfxPool.length) return;
       sfxUnlocked = true;
-      sfxPool.forEach((audio) => audio.load());
+      sfxPool.forEach(({ audio }) => audio.load());
     }
 
     function resetBranchVisitState() {
