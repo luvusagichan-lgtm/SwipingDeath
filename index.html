@@ -400,8 +400,16 @@
     function showConfigError(error) {
       els.tag.textContent = "配置读取失败";
       els.title.textContent = "无法加载玩法配置";
+      const localPreviewHint = location.protocol === "file:" ? [
+        "你正在直接打开本地 index.html，浏览器会拦截本地 JSON 读取。",
+        "请双击 Start_Local_Preview.bat，或在仓库根目录运行：",
+        "python -m http.server 4174 --bind 127.0.0.1",
+        "然后打开：http://127.0.0.1:4174/index.html",
+        ""
+      ] : [];
       els.body.textContent = [
-        "请确认以下文件已经部署到 GitHub Pages：",
+        ...localPreviewHint,
+        "请确认以下配置文件可以访问：",
         CONFIG_URLS.story,
         CONFIG_URLS.types,
         "",
