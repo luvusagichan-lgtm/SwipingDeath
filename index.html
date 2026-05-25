@@ -267,6 +267,14 @@
       types: "submissions/shinigami/config/shinigami_16types_config.json"
     };
 
+    const SFX = {
+      cardMotion: [
+        "submissions/austin/audio-placeholder-v01/assets/audio/sfx/u_nharq4usid-swipe-255512.mp3",
+        "submissions/austin/audio-placeholder-v01/assets/audio/sfx/universfield-swoosh-026-454861.mp3"
+      ],
+      volume: 0.42
+    };
+
     const axes = {
       QI: { left: "Q 数量主义", right: "I 个体主义", score: 0 },
       SP: { left: "S 自我圈层", right: "P 公共中立", score: 0 },
@@ -316,6 +324,16 @@
 
     function clamp(v, min, max) {
       return Math.min(max, Math.max(min, v));
+    }
+
+    function playRandomSfx(urls = SFX.cardMotion) {
+      if (!urls.length) return;
+      const url = urls[Math.floor(Math.random() * urls.length)];
+      const audio = new Audio(url);
+      audio.volume = SFX.volume;
+      audio.play().catch(() => {
+        // Browsers block audio until the first user gesture; future card actions will unlock it.
+      });
     }
 
     function resetBranchVisitState() {
@@ -441,6 +459,7 @@
       els.card.style.opacity = "1";
       els.card.style.transform = "translateX(0px) rotate(0deg)";
       els.card.classList.remove("show-left", "show-right");
+      playRandomSfx();
     }
 
     function nextIndexFor(card, choice) {
@@ -460,6 +479,7 @@
       if (idx >= cards.length) return;
       const card = cards[idx];
       const choice = side === "left" ? card.left || {} : card.right || {};
+      playRandomSfx();
       applyEffects(choice.effects);
 
       const dir = side === "left" ? -1 : 1;
