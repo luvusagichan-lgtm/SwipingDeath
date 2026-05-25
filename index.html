@@ -278,7 +278,8 @@
           gain: 0.28
         }
       ],
-      volume: 0.42
+      volume: 0.42,
+      pitchJitter: 0.2
     };
 
     const axes = {
@@ -344,6 +345,7 @@
       const { audio } = sfxPool[Math.floor(Math.random() * sfxPool.length)];
       audio.pause();
       audio.currentTime = 0;
+      audio.playbackRate = 1 + (Math.random() * 2 - 1) * SFX.pitchJitter;
       audio.play().catch(() => {});
     }
 
