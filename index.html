@@ -90,6 +90,24 @@
       font-size: 14px;
     }
 
+    .audio-toggle {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 20;
+      width: 92px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      color: var(--text);
+      background: rgba(22, 27, 37, 0.92);
+      backdrop-filter: blur(10px);
+    }
+
+    .audio-toggle[aria-pressed="false"] {
+      color: var(--muted);
+    }
+
     .board {
       position: relative;
       min-height: 420px;
@@ -266,6 +284,7 @@
   </style>
 </head>
 <body>
+  <button class="audio-toggle" id="musicToggle" aria-pressed="true">音乐 ON</button>
   <main class="app">
     <section class="menu" id="mainMenu">
       <div class="muted">Death Shift Personality Test</div>
@@ -359,6 +378,7 @@
       mainMenu: document.getElementById("mainMenu"),
       gameShell: document.getElementById("gameShell"),
       startBtn: document.getElementById("startBtn"),
+      musicToggle: document.getElementById("musicToggle"),
       card: document.getElementById("card"),
       tag: document.getElementById("tag"),
       title: document.getElementById("title"),
@@ -392,6 +412,7 @@
     let gameStarted = false;
     let currentBgm = null;
     let currentBgmKey = "";
+    let musicEnabled = true;
     const sfxPool = SFX.cardMotion.map((sfx) => {
       const audio = new Audio(sfx.url);
       audio.preload = "auto";
@@ -443,6 +464,15 @@
 
     function switchBgm(key, url, fadeMs = BGM.fadeMs) {
       if (!url) return;
+      if (!musicEnabled) {
+        currentBgmKey = key;
+        if (currentBgm) {
+          currentBgm.pause();
+          currentBgm.currentTime = 0;
+          currentBgm = null;
+        }
+        return;
+      }
       if (currentBgmKey === key) {
         if (currentBgm && currentBgm.paused) {
           currentBgm.play().then(() => {
@@ -487,6 +517,34 @@
     function updateChapterBgm() {
       const bgm = chapterBgmForIndex(idx);
       switchBgm(bgm.key, bgm.url);
+    }
+
+    function setMusicEnabled(enabled) {
+      musicEnabled = enabled;
+      els.musicToggle.setAttribute("aria-pressed", String(enabled));
+      els.musicToggle.textContent = enabled ? "音乐 ON" : "音乐 OFF";
+
+      if (!enabled) {
+        if (currentBgm) {
+          fadeAudio(currentBgm, currentBgm.volume, 0, 250, () => {
+            currentBgm.pause();
+          });
+        }
+        return;
+      }
+
+      if (gameStarted) {
+        const bgm = chapterBgmForIndex(idx);
+        currentBgmKey = "";
+        switchBgm(bgm.key, bgm.url, 500);
+      } else {
+        currentBgmKey = "";
+        switchBgm("menu", BGM.menu, 500);
+      }
+    }
+
+    function toggleMusic() {
+      setMusicEnabled(!musicEnabled);
     }
 
     function resetBranchVisitState() {
@@ -785,6 +843,7 @@
     els.btnLeft.addEventListener("click", () => choose("left"));
     els.btnRight.addEventListener("click", () => choose("right"));
     els.startBtn.addEventListener("click", startGame);
+    els.musicToggle.addEventListener("click", toggleMusic);
     els.mainMenu.addEventListener("pointerdown", () => switchBgm("menu", BGM.menu), { once: true });
 
     document.addEventListener("keydown", (e) => {
