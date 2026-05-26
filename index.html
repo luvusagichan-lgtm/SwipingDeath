@@ -408,15 +408,15 @@
           intro: [{ target: "intro1" }]
         },
         "first->oneThird": {
-          intro: [{ target: "chorus1" }, { target: "chorus2" }],
-          chorus: [{ target: "bridge1" }, { target: "intro3" }, { target: "intro4", silenceMs: 2000 }],
-          bridge: [{ target: "intro3" }, { target: "intro5", silenceMs: 2000 }],
+          intro: [{ target: "intro1" }],
+          chorus: [{ target: "intro1" }],
+          bridge: [{ target: "intro1" }],
           outro: [{ target: "intro1" }],
-          default: [{ target: "chorus1" }]
+          default: [{ target: "intro1" }]
         },
         "oneThird->twoThirds": {
-          intro: [{ target: "chorus1" }],
-          chorus: [{ target: "bridge1" }, { target: "intro1", silenceMs: 2000 }],
+          intro: [{ target: "intro1" }],
+          chorus: [{ target: "intro1" }],
           bridge: [{ target: "intro1" }],
           outro: [{ target: "intro1" }],
           default: [{ target: "intro1" }]
@@ -586,7 +586,7 @@
       }
 
       const previousKey = currentBgmKey;
-      const waitMs = waitForAnchor ? msUntilNextMusicalAnchor(previousKey) : 0;
+      const waitMs = 0;
       if (waitMs > 0) {
         pendingBgmKey = key;
         setTimeout(() => {
