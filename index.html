@@ -315,10 +315,10 @@
     const branchMergeRules = {
       "10-L": { group: "10", counterpart: "10-R", target: "12" },
       "10-R": { group: "10", counterpart: "10-L", target: "12" },
-      "17-L": { group: "17", counterpart: "17-R", target: "19" },
-      "17-R": { group: "17", counterpart: "17-L", target: "19" },
-      "24-L": { group: "24", counterpart: "24-R", target: "26", fallbackTarget: "27" },
-      "24-R": { group: "24", counterpart: "24-L", target: "26", fallbackTarget: "27" }
+      "18-L": { group: "18", counterpart: "18-R", target: "20" },
+      "18-R": { group: "18", counterpart: "18-L", target: "20" },
+      "26-L": { group: "26", counterpart: "26-R", target: "28" },
+      "26-R": { group: "26", counterpart: "26-L", target: "28" }
     };
     let branchVisitState = {};
 
@@ -446,7 +446,8 @@
       const card = cards[idx];
       const left = card.left || {};
       const right = card.right || {};
-      els.tag.textContent = card.tag || `裁决 ${card.id || idx + 1}`;
+      const displaySequence = card.sequence ?? idx + 1;
+      els.tag.textContent = card.tag || `裁决 ${displaySequence}`;
       els.title.textContent = card.title || card.text || "未命名裁决";
       els.body.textContent = card.body || card.text || "";
       els.leftChoice.textContent = "← " + (left.label || "左选项");
@@ -455,7 +456,7 @@
       els.btnRight.textContent = "右：" + (right.label || "右选项");
       els.leftFlag.textContent = "左：" + (left.label || "左选项");
       els.rightFlag.textContent = "右：" + (right.label || "右选项");
-      els.progress.textContent = `第 ${idx + 1} / ${cards.length} 卡`;
+      els.progress.textContent = `第 ${displaySequence} / ${cards.length} 卡`;
       els.card.style.opacity = "1";
       els.card.style.transform = "translateX(0px) rotate(0deg)";
       els.card.classList.remove("show-left", "show-right");
