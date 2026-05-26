@@ -1,0 +1,21 @@
+; Engine configuration file.
+; Open this folder with Godot 4.x and run the main scene.
+
+config_version=5
+
+[application]
+config/name="Death's Decree"
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.2")
+config/icon=""
+
+[display]
+window/size/viewport_width=1080
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+

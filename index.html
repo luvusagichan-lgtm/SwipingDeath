@@ -403,10 +403,10 @@
     const branchMergeRules = {
       "10-L": { group: "10", counterpart: "10-R", target: "12" },
       "10-R": { group: "10", counterpart: "10-L", target: "12" },
-      "17-L": { group: "17", counterpart: "17-R", target: "19" },
-      "17-R": { group: "17", counterpart: "17-L", target: "19" },
-      "24-L": { group: "24", counterpart: "24-R", target: "26", fallbackTarget: "27" },
-      "24-R": { group: "24", counterpart: "24-L", target: "26", fallbackTarget: "27" }
+      "18-L": { group: "18", counterpart: "18-R", target: "20" },
+      "18-R": { group: "18", counterpart: "18-L", target: "20" },
+      "26-L": { group: "26", counterpart: "26-R", target: "28" },
+      "26-R": { group: "26", counterpart: "26-L", target: "28" }
     };
     let branchVisitState = {};
 
@@ -494,7 +494,7 @@
 
     function resetBranchVisitState() {
       branchVisitState = Object.values(branchMergeRules).reduce((acc, rule) => {
-        acc[rule.group] = { visited: new Set() };
+        acc[rule.group] = { visited: new Set(), displayOrder: [] };
         return acc;
       }, {});
     }
@@ -520,10 +520,28 @@
       const mergeTarget = hasCardId(rule.target) ? rule.target : rule.fallbackTarget;
       if (mergeTarget && hasCardId(mergeTarget)) {
         state.visited.clear();
+        state.displayOrder = [];
         return mergeTarget;
       }
 
       return null;
+    }
+
+    function getDisplaySequence(card) {
+      const fallbackSequence = card.sequence ?? idx + 1;
+      const rule = branchMergeRules[String(card.id)];
+      if (!rule) {
+        return fallbackSequence;
+      }
+
+      const state = branchVisitState[rule.group] || { visited: new Set(), displayOrder: [] };
+      if (!state.displayOrder.includes(String(card.id))) {
+        state.displayOrder.push(String(card.id));
+      }
+      branchVisitState[rule.group] = state;
+
+      const branchPosition = state.displayOrder.indexOf(String(card.id));
+      return Number(rule.group) + Math.max(branchPosition, 0);
     }
 
     async function loadJson(url) {
@@ -610,7 +628,8 @@
       const card = cards[idx];
       const left = card.left || {};
       const right = card.right || {};
-      els.tag.textContent = card.tag || `裁决 ${card.id || idx + 1}`;
+      const displaySequence = getDisplaySequence(card);
+      els.tag.textContent = card.tag || `裁决 ${displaySequence}`;
       els.title.textContent = card.title || card.text || "未命名裁决";
       els.body.textContent = card.body || card.text || "";
       els.leftChoice.textContent = "← " + (left.label || "左选项");
@@ -619,7 +638,7 @@
       els.btnRight.textContent = "右：" + (right.label || "右选项");
       els.leftFlag.textContent = "左：" + (left.label || "左选项");
       els.rightFlag.textContent = "右：" + (right.label || "右选项");
-      els.progress.textContent = `第 ${idx + 1} / ${cards.length} 卡`;
+      els.progress.textContent = `第 ${displaySequence} / ${cards.length} 卡`;
       els.card.style.opacity = "1";
       els.card.style.transform = "translateX(0px) rotate(0deg)";
       els.card.classList.remove("show-left", "show-right");
