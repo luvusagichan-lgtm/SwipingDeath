@@ -297,6 +297,11 @@
       font-size: 26px;
     }
 
+    #typeCode,
+    #typeDesc {
+      white-space: pre-line;
+    }
+
     .share {
       border: 1px solid var(--border);
       background: #111621;
@@ -915,8 +920,8 @@
         if (!code) continue;
 
         map[code] = {
-          name: getField(rowObj, ["name", "typeName", "cnName", "中文名", "类型名"], code),
-          nameEn: getField(rowObj, ["nameEn", "enName", "englishName", "英文名"], code),
+          name: getField(rowObj, ["name", "typeName", "type_name_cn", "cnName", "中文名", "类型名"], code),
+          nameEn: getField(rowObj, ["nameEn", "type_name_en", "enName", "englishName", "英文名"], code),
           headline: getField(rowObj, ["headline", "title", "resultTitle", "标题"], "你的人格类型是："),
           quickreadBody: getField(rowObj, ["quickread_body", "quickreadbody", "quickReadBody"], ""),
           slogan: getField(rowObj, ["slogan", "tagline", "标语"], ""),
@@ -1100,20 +1105,24 @@
 
       const code = getTypeCode();
       const type = getTypeConfig(code);
+      const typeLabel = type.name || code;
+      const typeTitle = [code, type.slogan].filter(Boolean).join(" ");
+      const typeMeta = [
+        type.subline,
+        `${type.headline || "你的人格类型是："}${code}（${typeLabel}）`
+      ].filter(Boolean).join("\n");
 
       els.result.classList.add("show");
-      els.typeName.textContent = type.name || code;
-      els.typeCode.textContent = `${type.headline || "你的人格类型是："}${type.nameEn || code}（${code}）`;
+      els.typeName.textContent = typeTitle || code;
+      els.typeCode.textContent = typeMeta;
       els.typeDesc.textContent = [
         type.quickreadBody,
-        type.desc,
-        type.slogan,
-        type.subline
+        type.desc
       ].filter(Boolean).join("\n\n");
 
       const share = [
         "【死神值班：电车裁决】",
-        `我的结果：${type.name || code}（${type.nameEn || code}）`,
+        `我的结果：${code}（${typeLabel}）`,
         type.shareText || "",
         axisSummary(),
         "你会签下怎样的死亡裁决？"
