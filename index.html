@@ -316,520 +316,615 @@
     </section>
   </main>
 
-  <script>
-    const CONFIG_URLS = {
-      story: "submissions/shinigami/config/shinigami_story_config.json",
-      types: "submissions/shinigami/config/shinigami_16types_config.json"
-    };
+<script>
+  const CONFIG_URLS = {
+    story: "submissions/shinigami/config/shinigami_story_config.json",
+    types: "submissions/shinigami/config/shinigami_16types_config.csv"
+  };
 
-    const SFX = {
-      cardMotion: [
-        {
-          url: "submissions/austin/audio-placeholder-v01/assets/audio/sfx/u_nharq4usid-swipe-255512.mp3",
-          gain: 1.0
-        },
-        {
-          url: "submissions/austin/audio-placeholder-v01/assets/audio/sfx/universfield-swoosh-026-454861.mp3",
-          gain: 0.28
-        }
-      ],
-      volume: 0.42,
-      pitchJitter: 0.2
-    };
-
-    const BGM = {
-      menu: "submissions/austin/audio-placeholder-v01/assets/audio/music/00.mp3",
-      chapters: {
-        first: "submissions/austin/audio-placeholder-v01/assets/audio/music/01.mp3",
-        oneThird: "submissions/austin/audio-placeholder-v01/assets/audio/music/02.mp3",
-        twoThirds: "submissions/austin/audio-placeholder-v01/assets/audio/music/03.mp3",
-        finale: "submissions/austin/audio-placeholder-v01/assets/audio/music/04.mp3"
+  const SFX = {
+    cardMotion: [
+      {
+        url: "submissions/austin/audio-placeholder-v01/assets/audio/sfx/u_nharq4usid-swipe-255512.mp3",
+        gain: 1.0
       },
-      volume: 0.58,
-      fadeMs: 1800
-    };
-
-    const axes = {
-      QI: { left: "Q 数量主义", right: "I 个体主义", score: 0 },
-      SP: { left: "S 自我圈层", right: "P 公共中立", score: 0 },
-      FN: { left: "F 长期结果", right: "N 当下止损", score: 0 },
-      RB: { left: "R 规则服从", right: "B 规则突破", score: 0 }
-    };
-
-    const els = {
-      mainMenu: document.getElementById("mainMenu"),
-      gameShell: document.getElementById("gameShell"),
-      startBtn: document.getElementById("startBtn"),
-      card: document.getElementById("card"),
-      tag: document.getElementById("tag"),
-      title: document.getElementById("title"),
-      body: document.getElementById("body"),
-      leftChoice: document.getElementById("leftChoice"),
-      rightChoice: document.getElementById("rightChoice"),
-      btnLeft: document.getElementById("btnLeft"),
-      btnRight: document.getElementById("btnRight"),
-      progress: document.getElementById("progress"),
-      leftFlag: document.getElementById("leftFlag"),
-      rightFlag: document.getElementById("rightFlag"),
-      axisBoard: document.getElementById("axisBoard"),
-      result: document.getElementById("result"),
-      typeName: document.getElementById("typeName"),
-      typeCode: document.getElementById("typeCode"),
-      typeDesc: document.getElementById("typeDesc"),
-      shareText: document.getElementById("shareText"),
-      copyBtn: document.getElementById("copyBtn"),
-      restartBtn: document.getElementById("restartBtn"),
-      gameControls: document.getElementById("gameControls")
-    };
-
-    let cards = [];
-    let cardIndexById = {};
-    let typeConfigs = {};
-    let idx = 0;
-    let dragging = false;
-    let startX = 0;
-    let offsetX = 0;
-    let sfxUnlocked = false;
-    let gameStarted = false;
-    let currentBgm = null;
-    let currentBgmKey = "";
-    const sfxPool = SFX.cardMotion.map((sfx) => {
-      const audio = new Audio(sfx.url);
-      audio.preload = "auto";
-      audio.volume = clamp(SFX.volume * (sfx.gain || 1), 0, 1);
-      return { audio, gain: sfx.gain || 1 };
-    });
-    const SWIPE_THRESHOLD = 110;
-    const branchMergeRules = {
-      "10-L": { group: "10", counterpart: "10-R", target: "12" },
-      "10-R": { group: "10", counterpart: "10-L", target: "12" },
-      "18-L": { group: "18", counterpart: "18-R", target: "20" },
-      "18-R": { group: "18", counterpart: "18-L", target: "20" },
-      "26-L": { group: "26", counterpart: "26-R", target: "28" },
-      "26-R": { group: "26", counterpart: "26-L", target: "28" }
-    };
-    let branchVisitState = {};
-
-    function clamp(v, min, max) {
-      return Math.min(max, Math.max(min, v));
-    }
-
-    function playCardMotionSfx() {
-      if (!sfxPool.length) return;
-      const { audio } = sfxPool[Math.floor(Math.random() * sfxPool.length)];
-      audio.pause();
-      audio.currentTime = 0;
-      audio.playbackRate = 1 + (Math.random() * 2 - 1) * SFX.pitchJitter;
-      audio.play().catch(() => {});
-    }
-
-    function unlockSfx() {
-      if (sfxUnlocked || !sfxPool.length) return;
-      sfxUnlocked = true;
-      sfxPool.forEach(({ audio }) => audio.load());
-    }
-
-    function fadeAudio(audio, from, to, durationMs, onDone) {
-      const startedAt = performance.now();
-      audio.volume = from;
-      const timer = setInterval(() => {
-        const t = clamp((performance.now() - startedAt) / durationMs, 0, 1);
-        audio.volume = from + (to - from) * t;
-        if (t >= 1) {
-          clearInterval(timer);
-          if (onDone) onDone();
-        }
-      }, 40);
-    }
-
-    function switchBgm(key, url, fadeMs = BGM.fadeMs) {
-      if (!url) return;
-      if (currentBgmKey === key) {
-        if (currentBgm && currentBgm.paused) {
-          currentBgm.play().then(() => {
-            fadeAudio(currentBgm, currentBgm.volume, BGM.volume, fadeMs);
-          }).catch(() => {});
-        }
-        return;
+      {
+        url: "submissions/austin/audio-placeholder-v01/assets/audio/sfx/universfield-swoosh-026-454861.mp3",
+        gain: 0.28
       }
-      currentBgmKey = key;
+    ],
+    volume: 0.42,
+    pitchJitter: 0.2
+  };
 
-      const nextBgm = new Audio(url);
-      nextBgm.loop = true;
-      nextBgm.preload = "auto";
-      nextBgm.volume = 0;
+  const BGM = {
+    menu: "submissions/austin/audio-placeholder-v01/assets/audio/music/00.mp3",
+    chapters: {
+      first: "submissions/austin/audio-placeholder-v01/assets/audio/music/01.mp3",
+      oneThird: "submissions/austin/audio-placeholder-v01/assets/audio/music/02.mp3",
+      twoThirds: "submissions/austin/audio-placeholder-v01/assets/audio/music/03.mp3",
+      finale: "submissions/austin/audio-placeholder-v01/assets/audio/music/04.mp3"
+    },
+    volume: 0.58,
+    fadeMs: 1800
+  };
 
-      const previousBgm = currentBgm;
-      currentBgm = nextBgm;
+  const axes = {
+    QI: { left: "Q 数量主义", right: "I 个体主义", score: 0 },
+    SP: { left: "S 自我圈层", right: "P 公共中立", score: 0 },
+    FN: { left: "F 长期结果", right: "N 当下止损", score: 0 },
+    RB: { left: "R 规则服从", right: "B 规则突破", score: 0 }
+  };
 
-      nextBgm.play().then(() => {
-        fadeAudio(nextBgm, 0, BGM.volume, fadeMs);
-      }).catch(() => {});
+  const els = {
+    mainMenu: document.getElementById("mainMenu"),
+    gameShell: document.getElementById("gameShell"),
+    startBtn: document.getElementById("startBtn"),
+    card: document.getElementById("card"),
+    tag: document.getElementById("tag"),
+    title: document.getElementById("title"),
+    body: document.getElementById("body"),
+    leftChoice: document.getElementById("leftChoice"),
+    rightChoice: document.getElementById("rightChoice"),
+    btnLeft: document.getElementById("btnLeft"),
+    btnRight: document.getElementById("btnRight"),
+    progress: document.getElementById("progress"),
+    leftFlag: document.getElementById("leftFlag"),
+    rightFlag: document.getElementById("rightFlag"),
+    axisBoard: document.getElementById("axisBoard"),
+    result: document.getElementById("result"),
+    typeName: document.getElementById("typeName"),
+    typeCode: document.getElementById("typeCode"),
+    typeDesc: document.getElementById("typeDesc"),
+    shareText: document.getElementById("shareText"),
+    copyBtn: document.getElementById("copyBtn"),
+    restartBtn: document.getElementById("restartBtn"),
+    gameControls: document.getElementById("gameControls")
+  };
 
-      if (previousBgm) {
-        const previousVolume = previousBgm.volume;
-        fadeAudio(previousBgm, previousVolume, 0, fadeMs, () => {
-          previousBgm.pause();
-          previousBgm.currentTime = 0;
-        });
+  let cards = [];
+  let cardIndexById = {};
+  let typeConfigs = {};
+  let idx = 0;
+  let dragging = false;
+  let startX = 0;
+  let offsetX = 0;
+  let sfxUnlocked = false;
+  let gameStarted = false;
+  let currentBgm = null;
+  let currentBgmKey = "";
+  const sfxPool = SFX.cardMotion.map((sfx) => {
+    const audio = new Audio(sfx.url);
+    audio.preload = "auto";
+    audio.volume = clamp(SFX.volume * (sfx.gain || 1), 0, 1);
+    return { audio, gain: sfx.gain || 1 };
+  });
+  const SWIPE_THRESHOLD = 110;
+  const branchMergeRules = {
+    "10-L": { group: "10", counterpart: "10-R", target: "12" },
+    "10-R": { group: "10", counterpart: "10-L", target: "12" },
+    "18-L": { group: "18", counterpart: "18-R", target: "20" },
+    "18-R": { group: "18", counterpart: "18-L", target: "20" },
+    "26-L": { group: "26", counterpart: "26-R", target: "28" },
+    "26-R": { group: "26", counterpart: "26-L", target: "28" }
+  };
+  let branchVisitState = {};
+
+  function clamp(v, min, max) {
+    return Math.min(max, Math.max(min, v));
+  }
+
+  function playCardMotionSfx() {
+    if (!sfxPool.length) return;
+    const { audio } = sfxPool[Math.floor(Math.random() * sfxPool.length)];
+    audio.pause();
+    audio.currentTime = 0;
+    audio.playbackRate = 1 + (Math.random() * 2 - 1) * SFX.pitchJitter;
+    audio.play().catch(() => {});
+  }
+
+  function unlockSfx() {
+    if (sfxUnlocked || !sfxPool.length) return;
+    sfxUnlocked = true;
+    sfxPool.forEach(({ audio }) => audio.load());
+  }
+
+  function fadeAudio(audio, from, to, durationMs, onDone) {
+    const startedAt = performance.now();
+    audio.volume = from;
+    const timer = setInterval(() => {
+      const t = clamp((performance.now() - startedAt) / durationMs, 0, 1);
+      audio.volume = from + (to - from) * t;
+      if (t >= 1) {
+        clearInterval(timer);
+        if (onDone) onDone();
       }
-    }
+    }, 40);
+  }
 
-    function chapterBgmForIndex(cardIndex) {
-      if (!cards.length) return { key: "first", url: BGM.chapters.first };
-      const oneThird = Math.floor(cards.length / 3);
-      const twoThirds = Math.floor(cards.length * 2 / 3);
-      const finale = cards.length - 1;
-
-      if (cardIndex >= finale) return { key: "finale", url: BGM.chapters.finale };
-      if (cardIndex >= twoThirds) return { key: "twoThirds", url: BGM.chapters.twoThirds };
-      if (cardIndex >= oneThird) return { key: "oneThird", url: BGM.chapters.oneThird };
-      return { key: "first", url: BGM.chapters.first };
-    }
-
-    function updateChapterBgm() {
-      const bgm = chapterBgmForIndex(idx);
-      switchBgm(bgm.key, bgm.url);
-    }
-
-    function resetBranchVisitState() {
-      branchVisitState = Object.values(branchMergeRules).reduce((acc, rule) => {
-        acc[rule.group] = { visited: new Set(), displayOrder: [] };
-        return acc;
-      }, {});
-    }
-
-    function hasCardId(cardId) {
-      return Object.prototype.hasOwnProperty.call(cardIndexById, String(cardId));
-    }
-
-    function resolveBranchMergeNext(card) {
-      const rule = branchMergeRules[String(card.id)];
-      if (!rule) {
-        return null;
+  function switchBgm(key, url, fadeMs = BGM.fadeMs) {
+    if (!url) return;
+    if (currentBgmKey === key) {
+      if (currentBgm && currentBgm.paused) {
+        currentBgm.play().then(() => {
+          fadeAudio(currentBgm, currentBgm.volume, BGM.volume, fadeMs);
+        }).catch(() => {});
       }
+      return;
+    }
+    currentBgmKey = key;
 
-      const state = branchVisitState[rule.group] || { visited: new Set() };
-      state.visited.add(String(card.id));
-      branchVisitState[rule.group] = state;
+    const nextBgm = new Audio(url);
+    nextBgm.loop = true;
+    nextBgm.preload = "auto";
+    nextBgm.volume = 0;
 
-      if (!state.visited.has(rule.counterpart) && hasCardId(rule.counterpart)) {
-        return rule.counterpart;
-      }
+    const previousBgm = currentBgm;
+    currentBgm = nextBgm;
 
-      const mergeTarget = hasCardId(rule.target) ? rule.target : rule.fallbackTarget;
-      if (mergeTarget && hasCardId(mergeTarget)) {
-        state.visited.clear();
-        state.displayOrder = [];
-        return mergeTarget;
-      }
+    nextBgm.play().then(() => {
+      fadeAudio(nextBgm, 0, BGM.volume, fadeMs);
+    }).catch(() => {});
 
+    if (previousBgm) {
+      const previousVolume = previousBgm.volume;
+      fadeAudio(previousBgm, previousVolume, 0, fadeMs, () => {
+        previousBgm.pause();
+        previousBgm.currentTime = 0;
+      });
+    }
+  }
+
+  function chapterBgmForIndex(cardIndex) {
+    if (!cards.length) return { key: "first", url: BGM.chapters.first };
+    const oneThird = Math.floor(cards.length / 3);
+    const twoThirds = Math.floor(cards.length * 2 / 3);
+    const finale = cards.length - 1;
+
+    if (cardIndex >= finale) return { key: "finale", url: BGM.chapters.finale };
+    if (cardIndex >= twoThirds) return { key: "twoThirds", url: BGM.chapters.twoThirds };
+    if (cardIndex >= oneThird) return { key: "oneThird", url: BGM.chapters.oneThird };
+    return { key: "first", url: BGM.chapters.first };
+  }
+
+  function updateChapterBgm() {
+    const bgm = chapterBgmForIndex(idx);
+    switchBgm(bgm.key, bgm.url);
+  }
+
+  function resetBranchVisitState() {
+    branchVisitState = Object.values(branchMergeRules).reduce((acc, rule) => {
+      acc[rule.group] = { visited: new Set(), displayOrder: [] };
+      return acc;
+    }, {});
+  }
+
+  function hasCardId(cardId) {
+    return Object.prototype.hasOwnProperty.call(cardIndexById, String(cardId));
+  }
+
+  function resolveBranchMergeNext(card) {
+    const rule = branchMergeRules[String(card.id)];
+    if (!rule) {
       return null;
     }
 
-    function getDisplaySequence(card) {
-      const fallbackSequence = card.sequence ?? idx + 1;
-      const rule = branchMergeRules[String(card.id)];
-      if (!rule) {
-        return fallbackSequence;
+    const state = branchVisitState[rule.group] || { visited: new Set() };
+    state.visited.add(String(card.id));
+    branchVisitState[rule.group] = state;
+
+    if (!state.visited.has(rule.counterpart) && hasCardId(rule.counterpart)) {
+      return rule.counterpart;
+    }
+
+    const mergeTarget = hasCardId(rule.target) ? rule.target : rule.fallbackTarget;
+    if (mergeTarget && hasCardId(mergeTarget)) {
+      state.visited.clear();
+      state.displayOrder = [];
+      return mergeTarget;
+    }
+
+    return null;
+  }
+
+  function getDisplaySequence(card) {
+    const fallbackSequence = card.sequence ?? idx + 1;
+    const rule = branchMergeRules[String(card.id)];
+    if (!rule) {
+      return fallbackSequence;
+    }
+
+    const state = branchVisitState[rule.group] || { visited: new Set(), displayOrder: [] };
+    if (!state.displayOrder.includes(String(card.id))) {
+      state.displayOrder.push(String(card.id));
+    }
+    branchVisitState[rule.group] = state;
+
+    const branchPosition = state.displayOrder.indexOf(String(card.id));
+    return Number(rule.group) + Math.max(branchPosition, 0);
+  }
+
+  async function loadJson(url) {
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error(`${url} 加载失败：${response.status}`);
+    }
+    return response.json();
+  }
+
+  async function loadText(url) {
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error(`${url} 加载失败：${response.status}`);
+    }
+    return response.text();
+  }
+
+  function parseCsv(text) {
+    const rows = [];
+    let row = [];
+    let field = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < text.length; i += 1) {
+      const ch = text[i];
+
+      if (inQuotes) {
+        if (ch === '"') {
+          if (text[i + 1] === '"') {
+            field += '"';
+            i += 1;
+          } else {
+            inQuotes = false;
+          }
+        } else {
+          field += ch;
+        }
+        continue;
       }
 
-      const state = branchVisitState[rule.group] || { visited: new Set(), displayOrder: [] };
-      if (!state.displayOrder.includes(String(card.id))) {
-        state.displayOrder.push(String(card.id));
-      }
-      branchVisitState[rule.group] = state;
-
-      const branchPosition = state.displayOrder.indexOf(String(card.id));
-      return Number(rule.group) + Math.max(branchPosition, 0);
-    }
-
-    async function loadJson(url) {
-      const response = await fetch(url, { cache: "no-store" });
-      if (!response.ok) {
-        throw new Error(`${url} 加载失败：${response.status}`);
-      }
-      return response.json();
-    }
-
-    async function loadConfigs() {
-      els.progress.textContent = "正在读取配置...";
-      const [storyConfig, typeConfig] = await Promise.all([
-        loadJson(CONFIG_URLS.story),
-        loadJson(CONFIG_URLS.types)
-      ]);
-
-      cards = Array.isArray(storyConfig.cards) ? storyConfig.cards : [];
-      typeConfigs = typeConfig.types || {};
-      cardIndexById = Object.fromEntries(cards.map((card, index) => [String(card.id), index]));
-
-      if (!cards.length) {
-        throw new Error("剧情配置里没有可用卡牌");
-      }
-      if (!Object.keys(typeConfigs).length) {
-        throw new Error("人格配置里没有可用类型");
+      if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ",") {
+        row.push(field);
+        field = "";
+      } else if (ch === "\n") {
+        row.push(field);
+        rows.push(row);
+        row = [];
+        field = "";
+      } else if (ch === "\r") {
+        // ignore
+      } else {
+        field += ch;
       }
     }
 
-    function showConfigError(error) {
-      els.tag.textContent = "配置读取失败";
-      els.title.textContent = "无法加载玩法配置";
-      const localPreviewHint = location.protocol === "file:" ? [
-        "你正在直接打开本地 index.html，浏览器会拦截本地 JSON 读取。",
-        "请双击 Start_Local_Preview.bat，或在仓库根目录运行：",
-        "python -m http.server 4174 --bind 127.0.0.1",
-        "然后打开：http://127.0.0.1:4174/index.html",
-        ""
-      ] : [];
-      els.body.textContent = [
-        ...localPreviewHint,
-        "请确认以下配置文件可以访问：",
-        CONFIG_URLS.story,
-        CONFIG_URLS.types,
-        "",
-        error.message
-      ].join("\n");
-      els.leftChoice.textContent = "";
-      els.rightChoice.textContent = "";
-      els.btnLeft.textContent = "配置未加载";
-      els.btnRight.textContent = "配置未加载";
-      els.btnLeft.disabled = true;
-      els.btnRight.disabled = true;
-      els.progress.textContent = "配置错误";
-    }
+    row.push(field);
+    if (row.some((v) => v !== "")) rows.push(row);
+    return rows;
+  }
 
-    function applyEffects(effects) {
-      Object.entries(effects || {}).forEach(([k, delta]) => {
-        if (axes[k]) axes[k].score += Number(delta) || 0;
-      });
-    }
+  function mapTypeCsv(csvText) {
+    const text = csvText.replace(/^\uFEFF/, "");
+    const rows = parseCsv(text);
+    if (!rows.length) return {};
 
-    function renderAxes() {
-      const rows = Object.entries(axes).map(([k, axis]) => {
-        const score = clamp(axis.score, -60, 60);
-        const width = Math.abs(score) / 60 * 100;
-        return `
-          <div class="axis-row">
-            <span>${axis.left}</span>
-            <div class="bar"><div class="bar-fill" style="width:${width}%"></div></div>
-            <span style="text-align:right">${axis.right}</span>
-            <span class="muted" style="grid-column: 1 / 4;">${k}：${score >= 0 ? "偏" + axis.left : "偏" + axis.right}（${Math.abs(score)}）</span>
-          </div>
-        `;
-      }).join("");
-      els.axisBoard.innerHTML = rows;
-    }
+    const headers = rows[0].map((h) => String(h).trim());
+    const body = rows.slice(1);
+    const headerIndex = Object.fromEntries(headers.map((h, i) => [h, i]));
 
-    function renderCard() {
-      if (idx >= cards.length) {
-        finishGame();
-        return;
+    function pick(cols, ...keys) {
+      for (const key of keys) {
+        const i = headerIndex[key];
+        if (i != null) return String(cols[i] ?? "").trim();
       }
-      const card = cards[idx];
-      const left = card.left || {};
-      const right = card.right || {};
-      const displaySequence = getDisplaySequence(card);
-      els.tag.textContent = card.tag || `裁决 ${displaySequence}`;
-      els.title.textContent = card.title || card.text || "未命名裁决";
-      els.body.textContent = card.body || card.text || "";
-      els.leftChoice.textContent = "← " + (left.label || "左选项");
-      els.rightChoice.textContent = (right.label || "右选项") + " →";
-      els.btnLeft.textContent = "左：" + (left.label || "左选项");
-      els.btnRight.textContent = "右：" + (right.label || "右选项");
-      els.leftFlag.textContent = "左：" + (left.label || "左选项");
-      els.rightFlag.textContent = "右：" + (right.label || "右选项");
-      els.progress.textContent = `第 ${displaySequence} / ${cards.length} 卡`;
-      els.card.style.opacity = "1";
-      els.card.style.transform = "translateX(0px) rotate(0deg)";
-      els.card.classList.remove("show-left", "show-right");
-      updateChapterBgm();
+      return "";
     }
 
-    function nextIndexFor(card, choice) {
-      const branchNextId = resolveBranchMergeNext(card);
-      if (branchNextId && hasCardId(branchNextId)) {
-        return cardIndexById[String(branchNextId)];
-      }
+    const map = {};
+    body.forEach((cols) => {
+      const code = pick(cols, "type_code", "code").toUpperCase();
+      if (!code) return;
 
-      const nextId = choice.next || card.autoNext;
-      if (nextId && hasCardId(nextId)) {
-        return cardIndexById[String(nextId)];
-      }
-      return idx + 1;
-    }
+      const hiddenName = pick(cols, "hidden_name", "hidden");
+      const matchTag = pick(cols, "match_tag", "match");
 
-    function choose(side) {
-      if (idx >= cards.length) return;
-      const card = cards[idx];
-      const choice = side === "left" ? card.left || {} : card.right || {};
-      unlockSfx();
-      playCardMotionSfx();
-      applyEffects(choice.effects);
-
-      const dir = side === "left" ? -1 : 1;
-      els.card.style.transform = `translateX(${dir * 420}px) rotate(${dir * 12}deg)`;
-      els.card.style.opacity = "0";
-
-      setTimeout(() => {
-        idx = nextIndexFor(card, choice);
-        renderAxes();
-        renderCard();
-      }, 150);
-    }
-
-    function getTypeCode() {
-      const q = axes.QI.score >= 0 ? "Q" : "I";
-      const s = axes.SP.score >= 0 ? "S" : "P";
-      const f = axes.FN.score >= 0 ? "F" : "N";
-      const r = axes.RB.score >= 0 ? "R" : "B";
-      return q + s + f + r;
-    }
-
-    function getTypeConfig(code) {
-      return typeConfigs[code] || {
-        name: "未命名人格",
-        nameEn: code,
+      map[code] = {
+        name: pick(cols, "type_name_cn", "name_cn", "type_name", "name") || code,
+        nameEn: pick(cols, "type_name_en", "name_en", "type_en") || code,
         headline: "你的人格类型是：",
-        slogan: "",
-        desc: "当前分值组合没有找到对应的人格配置。",
-        shareText: `我测出${code}。`
+        slogan: pick(cols, "slogan", "tagline"),
+        subline: [hiddenName, matchTag].filter(Boolean).join(" · "),
+        desc: pick(cols, "quickread_body", "quickread", "desc", "description"),
+        shareText: pick(cols, "share_text", "share") || `我测出${code}。`
       };
+    });
+
+    return map;
+  }
+
+  async function loadTypeCsv(url) {
+    const text = await loadText(url);
+    return mapTypeCsv(text);
+  }
+
+  async function loadConfigs() {
+    els.progress.textContent = "正在读取配置...";
+    const [storyConfig, typeMap] = await Promise.all([
+      loadJson(CONFIG_URLS.story),
+      loadTypeCsv(CONFIG_URLS.types)
+    ]);
+
+    cards = Array.isArray(storyConfig.cards) ? storyConfig.cards : [];
+    typeConfigs = typeMap || {};
+    cardIndexById = Object.fromEntries(cards.map((card, index) => [String(card.id), index]));
+
+    if (!cards.length) {
+      throw new Error("剧情配置里没有可用卡牌");
+    }
+    if (!Object.keys(typeConfigs).length) {
+      throw new Error("人格配置里没有可用类型");
+    }
+  }
+
+  function showConfigError(error) {
+    els.tag.textContent = "配置读取失败";
+    els.title.textContent = "无法加载玩法配置";
+    const localPreviewHint = location.protocol === "file:" ? [
+      "你正在直接打开本地 index.html，浏览器会拦截本地配置读取（JSON/CSV）。",
+      "请双击 Start_Local_Preview.bat，或在仓库根目录运行：",
+      "python -m http.server 4174 --bind 127.0.0.1",
+      "然后打开：http://127.0.0.1:4174/index.html",
+      ""
+    ] : [];
+    els.body.textContent = [
+      ...localPreviewHint,
+      "请确认以下配置文件可以访问：",
+      CONFIG_URLS.story,
+      CONFIG_URLS.types,
+      "",
+      error.message
+    ].join("\n");
+    els.leftChoice.textContent = "";
+    els.rightChoice.textContent = "";
+    els.btnLeft.textContent = "配置未加载";
+    els.btnRight.textContent = "配置未加载";
+    els.btnLeft.disabled = true;
+    els.btnRight.disabled = true;
+    els.progress.textContent = "配置错误";
+  }
+
+  function applyEffects(effects) {
+    Object.entries(effects || {}).forEach(([k, delta]) => {
+      if (axes[k]) axes[k].score += Number(delta) || 0;
+    });
+  }
+
+  function renderAxes() {
+    const rows = Object.entries(axes).map(([k, axis]) => {
+      const score = clamp(axis.score, -60, 60);
+      const width = Math.abs(score) / 60 * 100;
+      return `
+        <div class="axis-row">
+          <span>${axis.left}</span>
+          <div class="bar"><div class="bar-fill" style="width:${width}%"></div></div>
+          <span style="text-align:right">${axis.right}</span>
+          <span class="muted" style="grid-column: 1 / 4;">${k}：${score >= 0 ? "偏" + axis.left : "偏" + axis.right}（${Math.abs(score)}）</span>
+        </div>
+      `;
+    }).join("");
+    els.axisBoard.innerHTML = rows;
+  }
+
+  function renderCard() {
+    if (idx >= cards.length) {
+      finishGame();
+      return;
+    }
+    const card = cards[idx];
+    const left = card.left || {};
+    const right = card.right || {};
+    const displaySequence = getDisplaySequence(card);
+    els.tag.textContent = card.tag || `裁决 ${displaySequence}`;
+    els.title.textContent = card.title || card.text || "未命名裁决";
+    els.body.textContent = card.body || card.text || "";
+    els.leftChoice.textContent = "← " + (left.label || "左选项");
+    els.rightChoice.textContent = (right.label || "右选项") + " →";
+    els.btnLeft.textContent = "左：" + (left.label || "左选项");
+    els.btnRight.textContent = "右：" + (right.label || "右选项");
+    els.leftFlag.textContent = "左：" + (left.label || "左选项");
+    els.rightFlag.textContent = "右：" + (right.label || "右选项");
+    els.progress.textContent = `第 ${displaySequence} / ${cards.length} 卡`;
+    els.card.style.opacity = "1";
+    els.card.style.transform = "translateX(0px) rotate(0deg)";
+    els.card.classList.remove("show-left", "show-right");
+    updateChapterBgm();
+  }
+
+  function nextIndexFor(card, choice) {
+    const branchNextId = resolveBranchMergeNext(card);
+    if (branchNextId && hasCardId(branchNextId)) {
+      return cardIndexById[String(branchNextId)];
     }
 
-    function axisSummary() {
-      const mapping = {
-        QI: ["Q 数量主义", "I 个体主义"],
-        SP: ["S 自我圈层", "P 公共中立"],
-        FN: ["F 长期结果", "N 当下止损"],
-        RB: ["R 规则服从", "B 规则突破"]
-      };
-      return Object.keys(mapping).map((k) => {
-        const v = axes[k].score;
-        const label = v >= 0 ? mapping[k][0] : mapping[k][1];
-        return `${label} ${Math.abs(v)}`;
-      }).join(" | ");
+    const nextId = choice.next || card.autoNext;
+    if (nextId && hasCardId(nextId)) {
+      return cardIndexById[String(nextId)];
     }
+    return idx + 1;
+  }
 
-    function finishGame() {
-      els.card.style.display = "none";
-      document.getElementById("board").style.display = "none";
-      els.gameControls.style.display = "none";
-      const code = getTypeCode();
-      const type = getTypeConfig(code);
-      els.result.classList.add("show");
-      els.typeName.textContent = type.name || code;
-      els.typeCode.textContent = `${type.headline || "你的人格类型是："}${type.nameEn || code}（${code}）`;
-      els.typeDesc.textContent = [type.slogan, type.subline, type.desc].filter(Boolean).join("\n\n");
+  function choose(side) {
+    if (idx >= cards.length) return;
+    const card = cards[idx];
+    const choice = side === "left" ? card.left || {} : card.right || {};
+    unlockSfx();
+    playCardMotionSfx();
+    applyEffects(choice.effects);
 
-      const share = [
-        "【死神值班：电车裁决】",
-        `我的结果：${type.name || code}（${type.nameEn || code}）`,
-        type.shareText || "",
-        axisSummary(),
-        "你会签下怎样的死亡裁决？"
-      ].filter(Boolean).join("\n");
-      els.shareText.textContent = share;
-      els.progress.textContent = "值班结束";
-    }
+    const dir = side === "left" ? -1 : 1;
+    els.card.style.transform = `translateX(${dir * 420}px) rotate(${dir * 12}deg)`;
+    els.card.style.opacity = "0";
 
-    function resetGame() {
-      Object.keys(axes).forEach((k) => axes[k].score = 0);
-      idx = 0;
-      gameStarted = true;
-      resetBranchVisitState();
-      els.result.classList.remove("show");
-      els.mainMenu.hidden = true;
-      els.gameShell.hidden = false;
-      els.card.style.display = "flex";
-      document.getElementById("board").style.display = "block";
-      els.gameControls.style.display = "grid";
+    setTimeout(() => {
+      idx = nextIndexFor(card, choice);
       renderAxes();
       renderCard();
+    }, 150);
+  }
+
+  function getTypeCode() {
+    const q = axes.QI.score >= 0 ? "Q" : "I";
+    const s = axes.SP.score >= 0 ? "S" : "P";
+    const f = axes.FN.score >= 0 ? "F" : "N";
+    const r = axes.RB.score >= 0 ? "R" : "B";
+    return q + s + f + r;
+  }
+
+  function getTypeConfig(code) {
+    return typeConfigs[code] || {
+      name: "未命名人格",
+      nameEn: code,
+      headline: "你的人格类型是：",
+      slogan: "",
+      desc: "当前分值组合没有找到对应的人格配置。",
+      shareText: `我测出${code}。`
+    };
+  }
+
+  function axisSummary() {
+    const mapping = {
+      QI: ["Q 数量主义", "I 个体主义"],
+      SP: ["S 自我圈层", "P 公共中立"],
+      FN: ["F 长期结果", "N 当下止损"],
+      RB: ["R 规则服从", "B 规则突破"]
+    };
+    return Object.keys(mapping).map((k) => {
+      const v = axes[k].score;
+      const label = v >= 0 ? mapping[k][0] : mapping[k][1];
+      return `${label} ${Math.abs(v)}`;
+    }).join(" | ");
+  }
+
+  function finishGame() {
+    els.card.style.display = "none";
+    document.getElementById("board").style.display = "none";
+    els.gameControls.style.display = "none";
+    const code = getTypeCode();
+    const type = getTypeConfig(code);
+    els.result.classList.add("show");
+    els.typeName.textContent = type.name || code;
+    els.typeCode.textContent = `${type.headline || "你的人格类型是："}${type.nameEn || code}（${code}）`;
+    els.typeDesc.textContent = [type.slogan, type.subline, type.desc].filter(Boolean).join("\n\n");
+
+    const share = [
+      "【死神值班：电车裁决】",
+      `我的结果：${type.name || code}（${type.nameEn || code}）`,
+      type.shareText || "",
+      axisSummary(),
+      "你会签下怎样的死亡裁决？"
+    ].filter(Boolean).join("\n");
+    els.shareText.textContent = share;
+    els.progress.textContent = "值班结束";
+  }
+
+  function resetGame() {
+    Object.keys(axes).forEach((k) => axes[k].score = 0);
+    idx = 0;
+    gameStarted = true;
+    resetBranchVisitState();
+    els.result.classList.remove("show");
+    els.mainMenu.hidden = true;
+    els.gameShell.hidden = false;
+    els.card.style.display = "flex";
+    document.getElementById("board").style.display = "block";
+    els.gameControls.style.display = "grid";
+    renderAxes();
+    renderCard();
+  }
+
+  function startGame() {
+    unlockSfx();
+    resetGame();
+  }
+
+  function onDragStart(clientX) {
+    dragging = true;
+    startX = clientX;
+    offsetX = 0;
+    els.card.style.transition = "none";
+  }
+
+  function onDragMove(clientX) {
+    if (!dragging) return;
+    offsetX = clientX - startX;
+    const rotate = clamp(offsetX / 18, -14, 14);
+    els.card.style.transform = `translateX(${offsetX}px) rotate(${rotate}deg)`;
+
+    els.card.classList.toggle("show-left", offsetX < -40);
+    els.card.classList.toggle("show-right", offsetX > 40);
+  }
+
+  function onDragEnd() {
+    if (!dragging) return;
+    dragging = false;
+    els.card.style.transition = "transform 160ms ease, opacity 160ms ease";
+    if (offsetX <= -SWIPE_THRESHOLD) {
+      choose("left");
+      return;
     }
-
-    function startGame() {
-      unlockSfx();
-      resetGame();
+    if (offsetX >= SWIPE_THRESHOLD) {
+      choose("right");
+      return;
     }
+    els.card.style.transform = "translateX(0) rotate(0deg)";
+    els.card.classList.remove("show-left", "show-right");
+  }
 
-    function onDragStart(clientX) {
-      dragging = true;
-      startX = clientX;
-      offsetX = 0;
-      els.card.style.transition = "none";
+  els.btnLeft.addEventListener("click", () => choose("left"));
+  els.btnRight.addEventListener("click", () => choose("right"));
+  els.startBtn.addEventListener("click", startGame);
+  els.mainMenu.addEventListener("pointerdown", () => switchBgm("menu", BGM.menu), { once: true });
+
+  document.addEventListener("keydown", (e) => {
+    if (!gameStarted || idx >= cards.length) return;
+    if (["ArrowLeft", "a", "A"].includes(e.key)) choose("left");
+    if (["ArrowRight", "d", "D"].includes(e.key)) choose("right");
+  });
+
+  els.copyBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(els.shareText.textContent);
+      els.copyBtn.textContent = "已复制";
+    } catch {
+      els.copyBtn.textContent = "复制失败，请手动复制";
     }
+    setTimeout(() => els.copyBtn.textContent = "复制分享文案", 1200);
+  });
 
-    function onDragMove(clientX) {
-      if (!dragging) return;
-      offsetX = clientX - startX;
-      const rotate = clamp(offsetX / 18, -14, 14);
-      els.card.style.transform = `translateX(${offsetX}px) rotate(${rotate}deg)`;
+  els.restartBtn.addEventListener("click", resetGame);
 
-      els.card.classList.toggle("show-left", offsetX < -40);
-      els.card.classList.toggle("show-right", offsetX > 40);
+  els.card.addEventListener("pointerdown", (e) => {
+    els.card.setPointerCapture(e.pointerId);
+    onDragStart(e.clientX);
+  });
+  els.card.addEventListener("pointermove", (e) => onDragMove(e.clientX));
+  els.card.addEventListener("pointerup", onDragEnd);
+  els.card.addEventListener("pointercancel", onDragEnd);
+
+  async function init() {
+    try {
+      await loadConfigs();
+      resetBranchVisitState();
+      renderAxes();
+      switchBgm("menu", BGM.menu);
+    } catch (error) {
+      els.mainMenu.hidden = true;
+      els.gameShell.hidden = false;
+      showConfigError(error);
     }
+  }
 
-    function onDragEnd() {
-      if (!dragging) return;
-      dragging = false;
-      els.card.style.transition = "transform 160ms ease, opacity 160ms ease";
-      if (offsetX <= -SWIPE_THRESHOLD) {
-        choose("left");
-        return;
-      }
-      if (offsetX >= SWIPE_THRESHOLD) {
-        choose("right");
-        return;
-      }
-      els.card.style.transform = "translateX(0) rotate(0deg)";
-      els.card.classList.remove("show-left", "show-right");
-    }
-
-    els.btnLeft.addEventListener("click", () => choose("left"));
-    els.btnRight.addEventListener("click", () => choose("right"));
-    els.startBtn.addEventListener("click", startGame);
-    els.mainMenu.addEventListener("pointerdown", () => switchBgm("menu", BGM.menu), { once: true });
-
-    document.addEventListener("keydown", (e) => {
-      if (!gameStarted || idx >= cards.length) return;
-      if (["ArrowLeft", "a", "A"].includes(e.key)) choose("left");
-      if (["ArrowRight", "d", "D"].includes(e.key)) choose("right");
-    });
-
-    els.copyBtn.addEventListener("click", async () => {
-      try {
-        await navigator.clipboard.writeText(els.shareText.textContent);
-        els.copyBtn.textContent = "已复制";
-      } catch {
-        els.copyBtn.textContent = "复制失败，请手动复制";
-      }
-      setTimeout(() => els.copyBtn.textContent = "复制分享文案", 1200);
-    });
-
-    els.restartBtn.addEventListener("click", resetGame);
-
-    els.card.addEventListener("pointerdown", (e) => {
-      els.card.setPointerCapture(e.pointerId);
-      onDragStart(e.clientX);
-    });
-    els.card.addEventListener("pointermove", (e) => onDragMove(e.clientX));
-    els.card.addEventListener("pointerup", onDragEnd);
-    els.card.addEventListener("pointercancel", onDragEnd);
-
-    async function init() {
-      try {
-        await loadConfigs();
-        resetBranchVisitState();
-        renderAxes();
-        switchBgm("menu", BGM.menu);
-      } catch (error) {
-        els.mainMenu.hidden = true;
-        els.gameShell.hidden = false;
-        showConfigError(error);
-      }
-    }
-
-    init();
-  </script>
-</body>
-</html>
+  init();
+</script>
