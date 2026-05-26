@@ -448,6 +448,7 @@
       },
       volume: 0.17,
       fadeMs: 1800,
+      preFadeMs: 2000,
       anchorWaitMaxMs: 30000
     };
 
@@ -585,10 +586,11 @@
     function msUntilNextMusicalAnchor(key) {
       const nextAnchor = nextAnchorForTrack(key);
       if (!nextAnchor) return 0;
-      return Math.min((nextAnchor.at - currentBgm.currentTime) * 1000, BGM.anchorWaitMaxMs);
+      const waitMs = (nextAnchor.at - currentBgm.currentTime) * 1000 - BGM.preFadeMs;
+      return Math.min(Math.max(waitMs, 0), BGM.anchorWaitMaxMs);
     }
 
-    function switchBgm(key, fadeMs = BGM.fadeMs, waitForAnchor = true) {
+    function switchBgm(key, fadeMs = BGM.fadeMs, waitForAnchor = true, lockedTransition = null) {
       const track = BGM.tracks[key];
       if (!track) return;
       if (!musicEnabled) {
@@ -610,17 +612,17 @@
       }
 
       const previousKey = currentBgmKey;
+      const transition = lockedTransition || chooseTransition(previousKey, key);
       const waitMs = waitForAnchor ? msUntilNextMusicalAnchor(previousKey) : 0;
       if (waitMs > 0) {
         pendingBgmKey = key;
         setTimeout(() => {
-          if (pendingBgmKey === key) switchBgm(key, fadeMs, false);
+          if (pendingBgmKey === key) switchBgm(key, fadeMs, false, transition);
         }, waitMs);
         return;
       }
       pendingBgmKey = "";
       currentBgmKey = key;
-      const transition = chooseTransition(previousKey, key);
 
       const nextBgm = new Audio(track.url);
       nextBgm.loop = true;
