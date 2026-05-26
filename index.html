@@ -361,29 +361,65 @@
         menu: {
           url: "submissions/austin/audio-placeholder-v01/assets/audio/music/00.mp3",
           anchors: {
-            start: { at: 0 },
-            loop: { at: 0, next: { first: "start" } }
+            start1: { at: 0, type: "intro" },
+            loop1: { at: 0, type: "intro" }
           }
         },
         first: {
           url: "submissions/austin/audio-placeholder-v01/assets/audio/music/01.mp3",
           anchors: {
-            start: { at: 0 },
-            exit: { at: 0, next: { oneThird: "start" } }
+            intro1: { at: 0, type: "intro" },
+            chorus1: { at: 45, type: "chorus" },
+            bridge1: { at: 75, type: "bridge" }
           }
         },
         oneThird: {
           url: "submissions/austin/audio-placeholder-v01/assets/audio/music/02.mp3",
           anchors: {
-            start: { at: 0 },
-            exit: { at: 0, next: { twoThirds: "start" } }
+            intro1: { at: 0, type: "intro" },
+            intro2: { at: 22, type: "intro" },
+            chorus1: { at: 45, type: "chorus" },
+            bridge1: { at: 67, type: "bridge" },
+            intro3: { at: 73, type: "intro" },
+            intro4: { at: 91, type: "intro" },
+            chorus2: { at: 101, type: "chorus" },
+            chorus3: { at: 113, type: "chorus" },
+            bridge2: { at: 124, type: "bridge" },
+            bridge3: { at: 135, type: "bridge" },
+            intro5: { at: 147, type: "intro" },
+            intro6: { at: 158, type: "intro" },
+            intro7: { at: 170, type: "intro" },
+            chorus4: { at: 180, type: "chorus" },
+            chorus5: { at: 192, type: "chorus" },
+            outro1: { at: 204, type: "outro" }
           }
         },
         twoThirds: {
           url: "submissions/austin/audio-placeholder-v01/assets/audio/music/03.mp3",
           anchors: {
-            start: { at: 0 }
+            intro1: { at: 0, type: "intro" },
+            chorus1: { at: 45, type: "chorus" },
+            bridge1: { at: 75, type: "bridge" }
           }
+        }
+      },
+      transitions: {
+        "menu->first": {
+          intro: [{ target: "intro1" }]
+        },
+        "first->oneThird": {
+          intro: [{ target: "chorus1" }, { target: "chorus2" }],
+          chorus: [{ target: "bridge1" }, { target: "intro3" }, { target: "intro4", silenceMs: 2000 }],
+          bridge: [{ target: "intro3" }, { target: "intro5", silenceMs: 2000 }],
+          outro: [{ target: "intro1" }],
+          default: [{ target: "chorus1" }]
+        },
+        "oneThird->twoThirds": {
+          intro: [{ target: "chorus1" }],
+          chorus: [{ target: "bridge1" }, { target: "intro1", silenceMs: 2000 }],
+          bridge: [{ target: "intro1" }],
+          outro: [{ target: "intro1" }],
+          default: [{ target: "intro1" }]
         }
       },
       volume: 0.17,
@@ -487,19 +523,45 @@
       }, 40);
     }
 
-    function bgmEntryTime(key, fromKey) {
-      const fromTrack = BGM.tracks[fromKey];
-      const targetTrack = BGM.tracks[key];
-      if (!targetTrack) return 0;
-      const nextAnchor = fromTrack?.anchors?.exit?.next?.[key] || "start";
-      return targetTrack.anchors?.[nextAnchor]?.at || 0;
+    function sortedAnchors(track) {
+      return Object.entries(track?.anchors || {})
+        .map(([name, anchor]) => ({ name, ...anchor }))
+        .sort((a, b) => a.at - b.at);
     }
 
-    function msUntilExitAnchor(key) {
-      if (!currentBgm || !key) return 0;
-      const exitAt = BGM.tracks[key]?.anchors?.exit?.at;
-      if (typeof exitAt !== "number" || exitAt <= currentBgm.currentTime) return 0;
-      return Math.min((exitAt - currentBgm.currentTime) * 1000, BGM.anchorWaitMaxMs);
+    function currentAnchorForTrack(key) {
+      const track = BGM.tracks[key];
+      if (!track || !currentBgm) return null;
+      return sortedAnchors(track).reduce((current, anchor) => {
+        return anchor.at <= currentBgm.currentTime ? anchor : current;
+      }, null);
+    }
+
+    function nextAnchorForTrack(key) {
+      const track = BGM.tracks[key];
+      if (!track || !currentBgm) return null;
+      return sortedAnchors(track).find((anchor) => anchor.at > currentBgm.currentTime) || null;
+    }
+
+    function chooseTransition(fromKey, toKey) {
+      const fromAnchor = currentAnchorForTrack(fromKey);
+      const fromType = fromAnchor?.type || "default";
+      const rule = BGM.transitions[`${fromKey}->${toKey}`] || {};
+      const options = rule[fromType] || rule.default || [{ target: "intro1" }];
+      const weighted = options.flatMap((option) => Array(option.weight || 1).fill(option));
+      return weighted[Math.floor(Math.random() * weighted.length)] || options[0];
+    }
+
+    function bgmEntryTime(key, anchorName) {
+      const targetTrack = BGM.tracks[key];
+      if (!targetTrack) return 0;
+      return targetTrack.anchors?.[anchorName]?.at || 0;
+    }
+
+    function msUntilNextMusicalAnchor(key) {
+      const nextAnchor = nextAnchorForTrack(key);
+      if (!nextAnchor) return 0;
+      return Math.min((nextAnchor.at - currentBgm.currentTime) * 1000, BGM.anchorWaitMaxMs);
     }
 
     function switchBgm(key, fadeMs = BGM.fadeMs, waitForAnchor = true) {
@@ -524,7 +586,7 @@
       }
 
       const previousKey = currentBgmKey;
-      const waitMs = waitForAnchor ? msUntilExitAnchor(previousKey) : 0;
+      const waitMs = waitForAnchor ? msUntilNextMusicalAnchor(previousKey) : 0;
       if (waitMs > 0) {
         pendingBgmKey = key;
         setTimeout(() => {
@@ -534,19 +596,26 @@
       }
       pendingBgmKey = "";
       currentBgmKey = key;
+      const transition = chooseTransition(previousKey, key);
 
       const nextBgm = new Audio(track.url);
       nextBgm.loop = true;
       nextBgm.preload = "auto";
       nextBgm.volume = 0;
-      nextBgm.currentTime = bgmEntryTime(key, previousKey);
+      nextBgm.currentTime = bgmEntryTime(key, transition.target);
 
       const previousBgm = currentBgm;
       currentBgm = nextBgm;
 
-      nextBgm.play().then(() => {
+      const startNextBgm = () => nextBgm.play().then(() => {
         fadeAudio(nextBgm, 0, BGM.volume, fadeMs);
       }).catch(() => {});
+
+      if (transition.silenceMs) {
+        setTimeout(startNextBgm, transition.silenceMs);
+      } else {
+        startNextBgm();
+      }
 
       if (previousBgm) {
         const previousVolume = previousBgm.volume;
