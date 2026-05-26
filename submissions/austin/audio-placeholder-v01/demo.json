@@ -1,0 +1,53 @@
+{
+  "title": "Austin 音效占位 v01",
+  "slug": "audio-placeholder-v01",
+  "author": "Austin",
+  "summary": "用于测试提交、上传和合并流程的游戏内音效音乐占位包。",
+  "focus": ["audio_music", "sfx", "voice"],
+  "based_on": [
+    "赛博死神升天中 _ 卡面文本.docx",
+    "UIdemo.mp4"
+  ],
+  "implementation_targets": [
+    "godot/scripts/game.gd",
+    "godot/play_web.html",
+    "godot/release/cyber-reaper-web-game/index.html"
+  ],
+  "asset_manifest": [
+    {
+      "id": "bgm-placeholder-v01",
+      "path": "assets/audio/music/.gitkeep",
+      "type": "music",
+      "tool": "placeholder",
+      "license_note": "正式音频上传后补充来源、授权和可用范围。"
+    },
+    {
+      "id": "sfx-placeholder-v01",
+      "path": "assets/audio/sfx/.gitkeep",
+      "type": "sfx",
+      "tool": "placeholder",
+      "license_note": "正式音频上传后补充来源、授权和可用范围。"
+    },
+    {
+      "id": "sfx-swipe-v01",
+      "path": "assets/audio/sfx/u_nharq4usid-swipe-255512.mp3",
+      "type": "sfx",
+      "tool": "uploaded",
+      "license_note": "用于发牌和用牌随机音效；正式合并前补充来源、授权和可用范围。"
+    },
+    {
+      "id": "sfx-swoosh-v01",
+      "path": "assets/audio/sfx/universfield-swoosh-026-454861.mp3",
+      "type": "sfx",
+      "tool": "uploaded",
+      "license_note": "用于发牌和用牌随机音效；正式合并前补充来源、授权和可用范围。"
+    },
+    {
+      "id": "voice-placeholder-v01",
+      "path": "assets/audio/voice/.gitkeep",
+      "type": "voice",
+      "tool": "placeholder",
+      "license_note": "正式语音上传后补充声音来源、授权和可用范围。"
+    }
+  ]
+}

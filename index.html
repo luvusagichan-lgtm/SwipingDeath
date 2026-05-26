@@ -37,13 +37,109 @@
       grid-template-columns: 1fr;
     }
 
+    .menu {
+      min-height: 520px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: linear-gradient(170deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      gap: 18px;
+      padding: 36px;
+      text-align: center;
+    }
+
+    .menu h1 {
+      margin: 0;
+      font-size: clamp(30px, 6vw, 56px);
+      line-height: 1.1;
+    }
+
+    .menu p {
+      margin: 0;
+      max-width: 560px;
+      color: var(--muted);
+      line-height: 1.7;
+      white-space: pre-line;
+    }
+
+    .start-button {
+      min-width: 180px;
+      padding: 14px 20px;
+      border-color: rgba(255, 212, 59, 0.45);
+      background: #1e2430;
+      font-size: 18px;
+    }
+
+    .game-shell {
+      display: grid;
+      gap: 16px;
+    }
+
+    .menu[hidden],
+    .game-shell[hidden] {
+      display: none;
+    }
+
     .topbar {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
+      display: grid;
+      gap: 10px;
       color: var(--muted);
       font-size: 14px;
     }
+
+    .audio-toggle {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 20;
+      width: 92px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      color: var(--text);
+      background: rgba(22, 27, 37, 0.92);
+      backdrop-filter: blur(10px);
+    }
+
+    .audio-toggle[aria-pressed="false"] {
+      color: var(--muted);
+    }
+
+    .progress-track {
+      position: relative;
+      height: 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.28);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #ffd43b 0%, #74c0fc 100%);
+      transition: width 180ms ease;
+    }
+
+    .topbar-note {
+      text-align: right;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
 
     .board {
       position: relative;
@@ -217,36 +313,51 @@
       .card { inset: 12px; }
       .axis-row { grid-template-columns: 92px 1fr 92px; font-size: 12px; }
       .card h2 { font-size: 20px; }
+      .topbar-note { text-align: left; }
     }
   </style>
 </head>
 <body>
+  <button class="audio-toggle" id="musicToggle" aria-pressed="true">音乐 ON</button>
   <main class="app">
-    <div class="topbar">
-      <div id="progress">第 1 / 15 卡</div>
-      <div>操作：← / A 选左，→ / D 选右，或拖拽卡片</div>
-    </div>
-
-    <section class="board" id="board">
-      <article class="card" id="card">
-        <div class="left-flag" id="leftFlag"></div>
-        <div class="right-flag" id="rightFlag"></div>
-        <div class="card-tag" id="tag"></div>
-        <h2 id="title"></h2>
-        <p id="body"></p>
-        <div class="choice-hint">
-          <span id="leftChoice"></span>
-          <span id="rightChoice"></span>
-        </div>
-      </article>
+    <section class="menu" id="mainMenu">
+      <div class="muted">Death Shift Personality Test</div>
+      <h1>死神值班</h1>
+      <p>在人类生死之间刷卡。
+每一次选择，都会被记录。</p>
+      <button class="start-button" id="startBtn">开始游戏</button>
     </section>
 
-    <div class="controls">
-      <button id="btnLeft"></button>
-      <button id="btnRight"></button>
-    </div>
+    <section class="game-shell" id="gameShell" hidden>
+      <div class="topbar">
+        <div class="progress-track" aria-hidden="true">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div id="progress" class="sr-only" aria-live="polite">第 1 / 30 题</div>
+        <div class="topbar-note">操作：← / A 选左，→ / D 选右，或拖拽卡片</div>
+      </div>
 
-    <section class="axis" id="axisBoard"></section>
+      <section class="board" id="board">
+        <article class="card" id="card">
+          <div class="left-flag" id="leftFlag"></div>
+          <div class="right-flag" id="rightFlag"></div>
+          <div class="card-tag" id="tag"></div>
+          <h2 id="title"></h2>
+          <p id="body"></p>
+          <div class="choice-hint">
+            <span id="leftChoice"></span>
+            <span id="rightChoice"></span>
+          </div>
+        </article>
+      </section>
+
+      <div class="controls" id="gameControls">
+        <button id="btnLeft"></button>
+        <button id="btnRight"></button>
+      </div>
+
+      <section class="axis" id="axisBoard"></section>
+    </section>
 
     <section class="result" id="result">
       <div class="muted">人格结算</div>
@@ -262,6 +373,128 @@
   </main>
 
   <script>
+    const CONFIG_URLS = {
+      storyCandidates: [
+        "submissions/shinigami/config/shinigami_story_config.json",
+        "shinigami_story_config.json"
+      ],
+      typesCsvCandidates: [
+        "submissions/shinigami/config/shinigami_16types_config.csv",
+        "shinigami_16types_config.csv"
+      ]
+    };
+
+    const SFX = {
+      cardMotion: [
+        {
+          url: "submissions/austin/audio-placeholder-v01/assets/audio/sfx/u_nharq4usid-swipe-255512.mp3",
+          gain: 1.0
+        },
+        {
+          url: "submissions/austin/audio-placeholder-v01/assets/audio/sfx/universfield-swoosh-026-454861.mp3",
+          gain: 0.28
+        }
+      ],
+      volume: 0.42,
+      pitchJitter: 0.2
+    };
+
+    const BGM = {
+      tracks: {
+        menu: {
+          url: "submissions/austin/audio-placeholder-v01/assets/audio/music/00.mp3",
+          anchors: {
+            start1: { at: 0, type: "intro" },
+            loop1: { at: 0, type: "intro" }
+          }
+        },
+        first: {
+          url: "submissions/austin/audio-placeholder-v01/assets/audio/music/01.mp3",
+          anchors: {
+            intro1: { at: 0, type: "intro" },
+            intro2: { at: 22, type: "intro" },
+            chorus1: { at: 45, type: "chorus" },
+            bridge1: { at: 67, type: "bridge" },
+            intro3: { at: 73, type: "intro" },
+            intro4: { at: 91, type: "intro" },
+            chorus2: { at: 101, type: "chorus" },
+            chorus3: { at: 113, type: "chorus" },
+            bridge2: { at: 124, type: "bridge" },
+            bridge3: { at: 135, type: "bridge" },
+            intro5: { at: 147, type: "intro" },
+            intro6: { at: 158, type: "intro" },
+            intro7: { at: 170, type: "intro" },
+            chorus4: { at: 180, type: "chorus" },
+            chorus5: { at: 192, type: "chorus" },
+            outro1: { at: 204, type: "outro" }
+          }
+        },
+        oneThird: {
+          url: "submissions/austin/audio-placeholder-v01/assets/audio/music/Dodo%20CyberHype.mp3",
+          anchors: {
+            intro1: { at: 0, type: "intro" },
+            intro2: { at: 22, type: "intro" },
+            chorus1: { at: 45, type: "chorus" },
+            bridge1: { at: 67, type: "bridge" },
+            intro3: { at: 73, type: "intro" },
+            intro4: { at: 91, type: "intro" },
+            chorus2: { at: 101, type: "chorus" },
+            chorus3: { at: 113, type: "chorus" },
+            bridge2: { at: 124, type: "bridge" },
+            bridge3: { at: 135, type: "bridge" },
+            intro5: { at: 147, type: "intro" },
+            intro6: { at: 158, type: "intro" },
+            intro7: { at: 170, type: "intro" },
+            chorus4: { at: 180, type: "chorus" },
+            chorus5: { at: 192, type: "chorus" },
+            outro1: { at: 204, type: "outro" }
+          }
+        },
+        twoThirds: {
+          url: "submissions/austin/audio-placeholder-v01/assets/audio/music/Judgment%20Ward01.mp3",
+          anchors: {
+            intro1: { at: 0, type: "intro" },
+            chorus1: { at: 45, type: "chorus" },
+            bridge1: { at: 75, type: "bridge" }
+          }
+        }
+      },
+      transitions: {
+        "menu->first": {
+          intro: [{ target: "intro1" }]
+        },
+        "first->oneThird": {
+          intro1: [{ target: "chorus1" }],
+          intro2: [{ target: "chorus1" }],
+          chorus1: [{ target: "bridge1" }],
+          bridge1: [{ target: "intro3" }],
+          intro3: [{ target: "chorus2" }],
+          intro4: [{ target: "chorus2" }],
+          chorus2: [{ target: "bridge2" }],
+          chorus3: [{ target: "bridge2" }],
+          bridge2: [{ target: "bridge3" }],
+          bridge3: [{ target: "intro5" }],
+          intro5: [{ target: "chorus4" }],
+          intro6: [{ target: "chorus4" }],
+          chorus4: [{ target: "bridge1" }],
+          chorus5: [{ target: "bridge1" }],
+          outro1: [{ target: "intro1" }],
+          default: [{ target: "intro1" }]
+        },
+        "oneThird->twoThirds": {
+          intro: [{ target: "intro1" }],
+          chorus: [{ target: "intro1" }],
+          bridge: [{ target: "intro1" }],
+          outro: [{ target: "intro1" }],
+          default: [{ target: "intro1" }]
+        }
+      },
+      volume: 0.17,
+      fadeMs: 1800,
+      preFadeMs: 2000,
+      anchorWaitMaxMs: 30000
+    };
+
     const axes = {
       QI: { left: "Q 数量主义", right: "I 个体主义", score: 0 },
       SP: { left: "S 自我圈层", right: "P 公共中立", score: 0 },
@@ -269,150 +502,11 @@
       RB: { left: "R 规则服从", right: "B 规则突破", score: 0 }
     };
 
-    const cards = [
-      {
-        tag: "事件背景 01",
-        title: "夜班刚开始，A-17 号列车刹车失灵",
-        body: "主线有 5 名维修工。\n岔道上有 1 名轨道医生，正在抢修急救通道。\n你只负责裁决，不负责解释。",
-        left: { label: "记录：继续收集信息", effects: { RB: +4 } },
-        right: { label: "记录：立刻进入裁决流程", effects: { RB: -4 } }
-      },
-      {
-        tag: "决策卡 02",
-        title: "第一裁决：拨向哪条轨道？",
-        body: "现在切轨能救一侧。另一侧会死。",
-        left: { label: "拨向岔道（死 1，救 5）", effects: { QI: +12, FN: +8, RB: -4 } },
-        right: { label: "维持主线（死 5，保 1）", effects: { QI: -12, FN: -8, RB: +4 } }
-      },
-      {
-        tag: "求情卡 03",
-        title: "岔道医生发来语音",
-        body: "“今晚还有 4 台大手术排队。我死了，明天会多死很多人。”",
-        left: { label: "采信医生的未来价值", effects: { FN: +12, QI: +8 } },
-        right: { label: "拒绝用未来押注当下命", effects: { FN: -12, QI: -4 } }
-      },
-      {
-        tag: "求情卡 04",
-        title: "主线维修班长提交名单",
-        body: "“5 个人里有我弟弟。还有 2 个实习生，家里全靠他们。”",
-        left: { label: "身份关系应被考虑", effects: { SP: +12, QI: -4 } },
-        right: { label: "关系不影响判决", effects: { SP: -12, RB: +4 } }
-      },
-      {
-        tag: "决策卡 05",
-        title: "执行前二次确认",
-        body: "系统提示：可按《紧急调度条例》走程序，或手动覆盖。",
-        left: { label: "按流程走（即使更慢）", effects: { RB: +12, FN: -4 } },
-        right: { label: "手动覆盖先救命", effects: { RB: -12, FN: +4 } }
-      },
-      {
-        tag: "事件反馈 06",
-        title: "列车停下了，但事故舆论炸裂",
-        body: "社媒把你称为“冷血分母党”或“道德绑架者”。\n上级要求你继续值班，下一辆已经进隧道。",
-        left: { label: "接受标签，继续执行", effects: { RB: +4 } },
-        right: { label: "拒绝标签，按直觉来", effects: { RB: -4 } }
-      },
-      {
-        tag: "事件背景 07",
-        title: "B-04 号车：主线是退休老兵 3 人，岔道是少年犯 1 人",
-        body: "少年犯正在改造期，老兵是城市勋章获得者。",
-        left: { label: "社会贡献应计入", effects: { FN: +8, SP: +4 } },
-        right: { label: "身份历史不应折价生命", effects: { SP: -8, RB: +4 } }
-      },
-      {
-        tag: "决策卡 08",
-        title: "第二裁决：你会让谁死？",
-        body: "你只能保一边。",
-        left: { label: "保 3 名老兵，弃 1 人", effects: { QI: +8, SP: +8 } },
-        right: { label: "保 1 名少年犯，弃 3 人", effects: { QI: -8, SP: -8 } }
-      },
-      {
-        tag: "求情卡 09",
-        title: "少年犯请求",
-        body: "“我欠社会很多，但我刚签了骨髓捐献，明天配型成功就能救人。”",
-        left: { label: "相信可逆转的未来", effects: { FN: +12, QI: -4 } },
-        right: { label: "不拿可能性做筹码", effects: { FN: -12, RB: +4 } }
-      },
-      {
-        tag: "求情卡 10",
-        title: "老兵家属请求",
-        body: "“他们守过城，现在该城市守他们。”",
-        left: { label: "优先回报既有牺牲者", effects: { SP: +12, RB: +4 } },
-        right: { label: "功勋不改变裁决规则", effects: { SP: -12, RB: +4 } }
-      },
-      {
-        tag: "决策卡 11",
-        title: "你发现系统有漏洞",
-        body: "按规则上报可在 20 分钟后修复。立刻越权可现在修，但留后门风险。",
-        left: { label: "先上报，维持程序", effects: { RB: +12, FN: -8 } },
-        right: { label: "先越权，事后补报告", effects: { RB: -12, FN: +8 } }
-      },
-      {
-        tag: "事件反馈 12",
-        title: "第三列进站：主线是 2 名科研人员，岔道是 2 名普通乘客",
-        body: "人数持平，身份争议极大。你没有更多时间。",
-        left: { label: "按社会效用做区分", effects: { QI: +4, FN: +8 } },
-        right: { label: "按个体等价不做区分", effects: { QI: -4, SP: -8 } }
-      },
-      {
-        tag: "求情卡 13",
-        title: "普通乘客发来一句话",
-        body: "“我们只是普通人，所以更容易被放弃吗？”",
-        left: { label: "普通人的当下不能被牺牲", effects: { SP: -8, FN: -4 } },
-        right: { label: "角色效用必须纳入衡量", effects: { SP: +8, FN: +4 } }
-      },
-      {
-        tag: "求情卡 14",
-        title: "科研人员发来一句话",
-        body: "“我们在做抗灾材料，明年可能救下几万人。”",
-        left: { label: "为未来押注一次", effects: { FN: +12, QI: +8 } },
-        right: { label: "未来不该凌驾眼前生命", effects: { FN: -12, QI: -8 } }
-      },
-      {
-        tag: "终局裁决 15",
-        title: "值班结束前最后一次签字",
-        body: "你必须给系统留下一条元规则：\n以后类似情况，优先遵守什么？",
-        left: { label: "优先规则与可追责性", effects: { RB: +12, SP: -4 } },
-        right: { label: "优先结果与可挽回性", effects: { RB: -12, FN: +8 } }
-      }
-    ];
-
-    const archetypes = {
-      "A1": {
-        name: "秩序工程师",
-        desc: "你倾向把生命决策纳入可审计系统：先求整体可复制，再求局部最优。"
-      },
-      "A2": {
-        name: "铁律守夜人",
-        desc: "你更信任程序正义，宁可承受短期痛感，也不愿让裁决沦为个人直觉。"
-      },
-      "B1": {
-        name: "破局功利家",
-        desc: "你会主动打破流程，优先保住更多可延续的生命与社会功能。"
-      },
-      "B2": {
-        name: "冷静止损者",
-        desc: "你反对幻想式押注，更重视立刻可验证的损失控制。"
-      },
-      "C1": {
-        name: "关系守护者",
-        desc: "你承认责任与关系网的道德重量，裁决中会保留“自己人”维度。"
-      },
-      "C2": {
-        name: "个体保全派",
-        desc: "你抵触把人压成统计单位，愿意为“不可替代的一个人”承担代价。"
-      },
-      "D1": {
-        name: "中立调停者",
-        desc: "你追求一视同仁，不让身份、功勋或标签改变生命价值。"
-      },
-      "D2": {
-        name: "逆流见证人",
-        desc: "你常在多数意见外坚持异议，优先守住当下具体的人。"
-      }
-    };
-
     const els = {
+      mainMenu: document.getElementById("mainMenu"),
+      gameShell: document.getElementById("gameShell"),
+      startBtn: document.getElementById("startBtn"),
+      musicToggle: document.getElementById("musicToggle"),
       card: document.getElementById("card"),
       tag: document.getElementById("tag"),
       title: document.getElementById("title"),
@@ -422,6 +516,7 @@
       btnLeft: document.getElementById("btnLeft"),
       btnRight: document.getElementById("btnRight"),
       progress: document.getElementById("progress"),
+      progressFill: document.getElementById("progressFill"),
       leftFlag: document.getElementById("leftFlag"),
       rightFlag: document.getElementById("rightFlag"),
       axisBoard: document.getElementById("axisBoard"),
@@ -431,30 +526,467 @@
       typeDesc: document.getElementById("typeDesc"),
       shareText: document.getElementById("shareText"),
       copyBtn: document.getElementById("copyBtn"),
-      restartBtn: document.getElementById("restartBtn")
+      restartBtn: document.getElementById("restartBtn"),
+      gameControls: document.getElementById("gameControls")
     };
 
+    let cards = [];
+    let cardIndexById = {};
+    let typeConfigs = {};
     let idx = 0;
     let dragging = false;
     let startX = 0;
     let offsetX = 0;
+    let sfxUnlocked = false;
+    let gameStarted = false;
+    let currentBgm = null;
+    let currentBgmKey = "";
+    let pendingBgmKey = "";
+    let musicEnabled = true;
+
+    const sfxPool = SFX.cardMotion.map((sfx) => {
+      const audio = new Audio(sfx.url);
+      audio.preload = "auto";
+      audio.volume = clamp(SFX.volume * (sfx.gain || 1), 0, 1);
+      return { audio, gain: sfx.gain || 1 };
+    });
+
     const SWIPE_THRESHOLD = 110;
+    const TOTAL_DISPLAY_STEPS = 30;
+    const branchMergeRules = {
+      "10-L": { group: "10", counterpart: "10-R", target: "12" },
+      "10-R": { group: "10", counterpart: "10-L", target: "12" },
+      "18-L": { group: "18", counterpart: "18-R", target: "20" },
+      "18-R": { group: "18", counterpart: "18-L", target: "20" },
+      "26-L": { group: "26", counterpart: "26-R", target: "28" },
+      "26-R": { group: "26", counterpart: "26-L", target: "28" }
+    };
+    const collapsedDisplayRules = [
+      { ids: new Set(["14-L", "14-R"]), display: 14, reduceAfter: 15 },
+      { ids: new Set(["22-L", "22-R"]), display: 21, reduceAfter: 23 },
+      { ids: new Set(["30-L", "30-R"]), display: 28, reduceAfter: 31 }
+    ];
+    let branchVisitState = {};
 
     function clamp(v, min, max) {
       return Math.min(max, Math.max(min, v));
     }
 
+    function playCardMotionSfx() {
+      if (!sfxPool.length) return;
+      const { audio } = sfxPool[Math.floor(Math.random() * sfxPool.length)];
+      audio.pause();
+      audio.currentTime = 0;
+      audio.playbackRate = 1 + (Math.random() * 2 - 1) * SFX.pitchJitter;
+      audio.play().catch(() => {});
+    }
+
+    function unlockSfx() {
+      if (sfxUnlocked || !sfxPool.length) return;
+      sfxUnlocked = true;
+      sfxPool.forEach(({ audio }) => audio.load());
+    }
+
+    function fadeAudio(audio, from, to, durationMs, onDone) {
+      const startedAt = performance.now();
+      audio.volume = from;
+      const timer = setInterval(() => {
+        const t = clamp((performance.now() - startedAt) / durationMs, 0, 1);
+        audio.volume = from + (to - from) * t;
+        if (t >= 1) {
+          clearInterval(timer);
+          if (onDone) onDone();
+        }
+      }, 40);
+    }
+
+    function sortedAnchors(track) {
+      return Object.entries(track?.anchors || {})
+        .map(([name, anchor]) => ({ name, ...anchor }))
+        .sort((a, b) => a.at - b.at);
+    }
+
+    function currentAnchorForTrack(key) {
+      const track = BGM.tracks[key];
+      if (!track || !currentBgm) return null;
+      return sortedAnchors(track).reduce((current, anchor) => {
+        return anchor.at <= currentBgm.currentTime ? anchor : current;
+      }, null);
+    }
+
+    function nextAnchorForTrack(key) {
+      const track = BGM.tracks[key];
+      if (!track || !currentBgm) return null;
+      return sortedAnchors(track).find((anchor) => anchor.at > currentBgm.currentTime) || null;
+    }
+
+    function chooseTransition(fromKey, toKey) {
+      const fromAnchor = currentAnchorForTrack(fromKey);
+      const fromType = fromAnchor?.type || "default";
+      const rule = BGM.transitions[`${fromKey}->${toKey}`] || {};
+      const options = rule[fromAnchor?.name] || rule[fromType] || rule.default || [{ target: "intro1" }];
+      const weighted = options.flatMap((option) => Array(option.weight || 1).fill(option));
+      return weighted[Math.floor(Math.random() * weighted.length)] || options[0];
+    }
+
+    function bgmEntryTime(key, anchorName) {
+      const targetTrack = BGM.tracks[key];
+      if (!targetTrack) return 0;
+      return targetTrack.anchors?.[anchorName]?.at || 0;
+    }
+
+    function msUntilNextMusicalAnchor(key) {
+      const nextAnchor = nextAnchorForTrack(key);
+      if (!nextAnchor) return 0;
+      const waitMs = (nextAnchor.at - currentBgm.currentTime) * 1000 - BGM.preFadeMs;
+      return Math.min(Math.max(waitMs, 0), BGM.anchorWaitMaxMs);
+    }
+
+    function switchBgm(key, fadeMs = BGM.fadeMs, waitForAnchor = true, lockedTransition = null) {
+      const track = BGM.tracks[key];
+      if (!track) return;
+      if (!musicEnabled) {
+        currentBgmKey = key;
+        if (currentBgm) {
+          currentBgm.pause();
+          currentBgm.currentTime = 0;
+          currentBgm = null;
+        }
+        return;
+      }
+      if (currentBgmKey === key) {
+        if (currentBgm && currentBgm.paused) {
+          currentBgm.play().then(() => {
+            fadeAudio(currentBgm, currentBgm.volume, BGM.volume, fadeMs);
+          }).catch(() => {});
+        }
+        return;
+      }
+
+      const previousKey = currentBgmKey;
+      const transition = lockedTransition || chooseTransition(previousKey, key);
+      const waitMs = waitForAnchor ? msUntilNextMusicalAnchor(previousKey) : 0;
+      if (waitMs > 0) {
+        pendingBgmKey = key;
+        setTimeout(() => {
+          if (pendingBgmKey === key) switchBgm(key, fadeMs, false, transition);
+        }, waitMs);
+        return;
+      }
+      pendingBgmKey = "";
+      currentBgmKey = key;
+
+      const nextBgm = new Audio(track.url);
+      nextBgm.loop = true;
+      nextBgm.preload = "auto";
+      nextBgm.volume = 0;
+      nextBgm.currentTime = bgmEntryTime(key, transition.target);
+
+      const previousBgm = currentBgm;
+      currentBgm = nextBgm;
+
+      const startNextBgm = () => nextBgm.play().then(() => {
+        fadeAudio(nextBgm, 0, BGM.volume, fadeMs);
+      }).catch(() => {});
+
+      if (transition.silenceMs) {
+        setTimeout(startNextBgm, transition.silenceMs);
+      } else {
+        startNextBgm();
+      }
+
+      if (previousBgm) {
+        const previousVolume = previousBgm.volume;
+        fadeAudio(previousBgm, previousVolume, 0, fadeMs, () => {
+          previousBgm.pause();
+          previousBgm.currentTime = 0;
+        });
+      }
+    }
+
+    function chapterBgmForIndex(cardIndex) {
+      if (!cards.length) return "first";
+      const oneThird = 8;
+      const twoThirds = 23;
+
+      if (cardIndex >= twoThirds) return "twoThirds";
+      if (cardIndex >= oneThird) return "oneThird";
+      return "first";
+    }
+
+    function updateChapterBgm() {
+      switchBgm(chapterBgmForIndex(idx));
+    }
+
+    function setMusicEnabled(enabled) {
+      musicEnabled = enabled;
+      els.musicToggle.setAttribute("aria-pressed", String(enabled));
+      els.musicToggle.textContent = enabled ? "音乐 ON" : "音乐 OFF";
+
+      if (!enabled) {
+        if (currentBgm) {
+          fadeAudio(currentBgm, currentBgm.volume, 0, 250, () => {
+            currentBgm.pause();
+          });
+        }
+        return;
+      }
+
+      if (gameStarted) {
+        currentBgmKey = "";
+        switchBgm(chapterBgmForIndex(idx), 500, false);
+      } else {
+        currentBgmKey = "";
+        switchBgm("menu", 500, false);
+      }
+    }
+
+    function toggleMusic() {
+      setMusicEnabled(!musicEnabled);
+    }
+
+    function resetBranchVisitState() {
+      branchVisitState = Object.values(branchMergeRules).reduce((acc, rule) => {
+        acc[rule.group] = { visited: new Set(), displayOrder: [] };
+        return acc;
+      }, {});
+    }
+
+    function hasCardId(cardId) {
+      return Object.prototype.hasOwnProperty.call(cardIndexById, String(cardId));
+    }
+
+    function updateProgress(step, label = "") {
+      const normalizedStep = clamp(Number(step) || 0, 0, TOTAL_DISPLAY_STEPS);
+      if (els.progressFill) {
+        els.progressFill.style.width = `${(normalizedStep / TOTAL_DISPLAY_STEPS) * 100}%`;
+      }
+      if (els.progress) {
+        els.progress.textContent = label || `第 ${normalizedStep} / ${TOTAL_DISPLAY_STEPS} 题`;
+      }
+    }
+
+    function resolveBranchMergeNext(card) {
+      const rule = branchMergeRules[String(card.id)];
+      if (!rule) return null;
+
+      const state = branchVisitState[rule.group] || { visited: new Set(), displayOrder: [] };
+      state.visited.add(String(card.id));
+      branchVisitState[rule.group] = state;
+
+      if (!state.visited.has(rule.counterpart) && hasCardId(rule.counterpart)) {
+        return rule.counterpart;
+      }
+
+      const mergeTarget = hasCardId(rule.target) ? rule.target : rule.fallbackTarget;
+      if (mergeTarget && hasCardId(mergeTarget)) {
+        state.visited.clear();
+        state.displayOrder = [];
+        return mergeTarget;
+      }
+
+      return null;
+    }
+
+    function getDisplaySequence(card) {
+      const fallbackSequence = card.sequence ?? idx + 1;
+      const rule = branchMergeRules[String(card.id)];
+      let displaySequence = fallbackSequence;
+
+      if (rule) {
+        const state = branchVisitState[rule.group] || { visited: new Set(), displayOrder: [] };
+        if (!state.displayOrder.includes(String(card.id))) {
+          state.displayOrder.push(String(card.id));
+        }
+        branchVisitState[rule.group] = state;
+
+        const branchPosition = state.displayOrder.indexOf(String(card.id));
+        displaySequence = Number(rule.group) + Math.max(branchPosition, 0);
+      }
+
+      const collapsedRule = collapsedDisplayRules.find((item) => item.ids.has(String(card.id)));
+      if (collapsedRule) {
+        return collapsedRule.display;
+      }
+
+      const reduction = collapsedDisplayRules.reduce((count, item) => {
+        return displaySequence > item.reduceAfter ? count + 1 : count;
+      }, 0);
+      return displaySequence - reduction;
+    }
+
+    async function fetchFirstAvailable(urlCandidates, asText = false) {
+      const errors = [];
+      for (const url of urlCandidates) {
+        try {
+          const response = await fetch(url, { cache: "no-store" });
+          if (!response.ok) {
+            errors.push(`${url} -> ${response.status}`);
+            continue;
+          }
+          return asText ? await response.text() : await response.json();
+        } catch (err) {
+          errors.push(`${url} -> ${err.message}`);
+        }
+      }
+      throw new Error("配置读取失败：\n" + errors.join("\n"));
+    }
+
+    function parseCSV(text) {
+      const src = String(text || "").replace(/^\uFEFF/, "");
+      const rows = [];
+      let row = [];
+      let cell = "";
+      let inQuotes = false;
+
+      for (let i = 0; i < src.length; i++) {
+        const ch = src[i];
+
+        if (inQuotes) {
+          if (ch === "\"") {
+            if (src[i + 1] === "\"") {
+              cell += "\"";
+              i++;
+            } else {
+              inQuotes = false;
+            }
+          } else {
+            cell += ch;
+          }
+        } else {
+          if (ch === "\"") {
+            inQuotes = true;
+          } else if (ch === ",") {
+            row.push(cell);
+            cell = "";
+          } else if (ch === "\n") {
+            row.push(cell);
+            rows.push(row);
+            row = [];
+            cell = "";
+          } else if (ch === "\r") {
+            // skip
+          } else {
+            cell += ch;
+          }
+        }
+      }
+
+      row.push(cell);
+      if (row.length > 1 || row[0] !== "") rows.push(row);
+      return rows;
+    }
+
+    function normalizeKey(k) {
+      return String(k || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "")
+        .replace(/[_-]/g, "");
+    }
+
+    function getField(rowObj, aliasKeys, fallback = "") {
+      const normalizedAlias = aliasKeys.map(normalizeKey);
+      for (const key of Object.keys(rowObj)) {
+        if (normalizedAlias.includes(normalizeKey(key))) {
+          return String(rowObj[key] ?? "").trim();
+        }
+      }
+      return fallback;
+    }
+
+    function buildTypeConfigMapFromCsv(csvText) {
+      const rows = parseCSV(csvText);
+      if (!rows.length) return {};
+
+      const headers = rows[0].map(h => String(h || "").trim());
+      const map = {};
+
+      for (let i = 1; i < rows.length; i++) {
+        const cols = rows[i];
+        if (!cols || cols.every(v => String(v || "").trim() === "")) continue;
+
+        const rowObj = {};
+        headers.forEach((h, idx2) => {
+          rowObj[h] = String(cols[idx2] ?? "").trim();
+        });
+
+        const code = getField(rowObj, ["code", "type", "typecode", "mbti", "nameEn", "类型代号"]).toUpperCase();
+        if (!code) continue;
+
+        map[code] = {
+          name: getField(rowObj, ["name", "typeName", "cnName", "中文名", "类型名"], code),
+          nameEn: getField(rowObj, ["nameEn", "enName", "englishName", "英文名"], code),
+          headline: getField(rowObj, ["headline", "title", "resultTitle", "标题"], "你的人格类型是："),
+          slogan: getField(rowObj, ["slogan", "tagline", "标语"], ""),
+          subline: getField(rowObj, ["subline", "副标题"], ""),
+          desc: getField(rowObj, ["desc", "description", "typeDesc", "描述"], ""),
+          shareText: getField(rowObj, ["shareText", "share", "分享文案"], "")
+        };
+      }
+
+      return map;
+    }
+
+    async function loadConfigs() {
+      updateProgress(0, "正在读取配置...");
+
+      const [storyConfig, typesCsvText] = await Promise.all([
+        fetchFirstAvailable(CONFIG_URLS.storyCandidates, false),
+        fetchFirstAvailable(CONFIG_URLS.typesCsvCandidates, true)
+      ]);
+
+      cards = Array.isArray(storyConfig.cards) ? storyConfig.cards : [];
+      cardIndexById = Object.fromEntries(cards.map((card, index) => [String(card.id), index]));
+      typeConfigs = buildTypeConfigMapFromCsv(typesCsvText);
+
+      if (!cards.length) {
+        throw new Error("剧情配置里没有可用卡牌");
+      }
+      if (!Object.keys(typeConfigs).length) {
+        throw new Error("CSV 解析完成，但没有得到人格类型。请检查 CSV 表头是否包含 code/type 等字段。");
+      }
+    }
+
+    function showConfigError(error) {
+      els.tag.textContent = "配置读取失败";
+      els.title.textContent = "无法加载玩法配置";
+
+      const localPreviewHint = location.protocol === "file:" ? [
+        "你正在直接双击打开 index.html，本地文件模式会拦截 fetch。",
+        "请用本地预览启动后再访问（http://127.0.0.1:4174/index.html）。",
+        ""
+      ] : [];
+
+      els.body.textContent = [
+        ...localPreviewHint,
+        "请确认以下文件可访问：",
+        ...CONFIG_URLS.storyCandidates.map(p => `剧情：${p}`),
+        ...CONFIG_URLS.typesCsvCandidates.map(p => `人格CSV：${p}`),
+        "",
+        "错误信息：",
+        error.message
+      ].join("\n");
+
+      els.leftChoice.textContent = "";
+      els.rightChoice.textContent = "";
+      els.btnLeft.textContent = "配置未加载";
+      els.btnRight.textContent = "配置未加载";
+      els.btnLeft.disabled = true;
+      els.btnRight.disabled = true;
+      updateProgress(0, "配置错误");
+    }
+
     function applyEffects(effects) {
-      Object.entries(effects).forEach(([k, delta]) => {
-        if (axes[k]) axes[k].score += delta;
+      Object.entries(effects || {}).forEach(([k, delta]) => {
+        if (axes[k]) axes[k].score += Number(delta) || 0;
       });
     }
 
     function renderAxes() {
       const rows = Object.entries(axes).map(([k, axis]) => {
         const score = clamp(axis.score, -60, 60);
-        const width = Math.abs(score) / 60 * 100;
-        const strong = score >= 0 ? axis.left : axis.right;
+        const width = (Math.abs(score) / 60) * 100;
         return `
           <div class="axis-row">
             <span>${axis.left}</span>
@@ -473,33 +1005,55 @@
         return;
       }
       const card = cards[idx];
-      els.tag.textContent = card.tag;
-      els.title.textContent = card.title;
-      els.body.textContent = card.body;
-      els.leftChoice.textContent = "← " + card.left.label;
-      els.rightChoice.textContent = card.right.label + " →";
-      els.btnLeft.textContent = "左：" + card.left.label;
-      els.btnRight.textContent = "右：" + card.right.label;
-      els.leftFlag.textContent = "左：" + card.left.label;
-      els.rightFlag.textContent = "右：" + card.right.label;
-      els.progress.textContent = `第 ${idx + 1} / ${cards.length} 卡`;
+      const left = card.left || {};
+      const right = card.right || {};
+      const displaySequence = getDisplaySequence(card);
+
+      els.tag.textContent = card.tag || `裁决 ${displaySequence}`;
+      els.title.textContent = card.title || card.text || "未命名裁决";
+      els.body.textContent = card.body || card.text || "";
+      els.leftChoice.textContent = "← " + (left.label || "左选项");
+      els.rightChoice.textContent = (right.label || "右选项") + " →";
+      els.btnLeft.textContent = "左：" + (left.label || "左选项");
+      els.btnRight.textContent = "右：" + (right.label || "右选项");
+      els.leftFlag.textContent = "左：" + (left.label || "左选项");
+      els.rightFlag.textContent = "右：" + (right.label || "右选项");
+      updateProgress(displaySequence, `第 ${displaySequence} / ${TOTAL_DISPLAY_STEPS} 题`);
+
       els.card.style.opacity = "1";
       els.card.style.transform = "translateX(0px) rotate(0deg)";
       els.card.classList.remove("show-left", "show-right");
+      updateChapterBgm();
+    }
+
+    function nextIndexFor(card, choice) {
+      const branchNextId = resolveBranchMergeNext(card);
+      if (branchNextId && hasCardId(branchNextId)) {
+        return cardIndexById[String(branchNextId)];
+      }
+
+      const nextId = choice.next || card.autoNext;
+      if (nextId && hasCardId(nextId)) {
+        return cardIndexById[String(nextId)];
+      }
+      return idx + 1;
     }
 
     function choose(side) {
       if (idx >= cards.length) return;
+
       const card = cards[idx];
-      const choice = side === "left" ? card.left : card.right;
-      applyEffects(choice.effects || {});
+      const choice = side === "left" ? (card.left || {}) : (card.right || {});
+      unlockSfx();
+      playCardMotionSfx();
+      applyEffects(choice.effects);
 
       const dir = side === "left" ? -1 : 1;
       els.card.style.transform = `translateX(${dir * 420}px) rotate(${dir * 12}deg)`;
       els.card.style.opacity = "0";
 
       setTimeout(() => {
-        idx += 1;
+        idx = nextIndexFor(card, choice);
         renderAxes();
         renderCard();
       }, 150);
@@ -513,17 +1067,15 @@
       return q + s + f + r;
     }
 
-    function getArchetype() {
-      const social = axes.QI.score + axes.SP.score;
-      const method = axes.FN.score + axes.RB.score;
-      const certainty = ["QI", "SP", "FN", "RB"].reduce((acc, key) => acc + Math.abs(axes[key].score), 0);
-
-      let key = "A1";
-      if (social >= 0 && method >= 0) key = certainty >= 120 ? "A1" : "A2";
-      if (social >= 0 && method < 0) key = certainty >= 120 ? "B1" : "B2";
-      if (social < 0 && method >= 0) key = certainty >= 120 ? "C1" : "C2";
-      if (social < 0 && method < 0) key = certainty >= 120 ? "D1" : "D2";
-      return archetypes[key];
+    function getTypeConfig(code) {
+      return typeConfigs[code] || {
+        name: "未命名人格",
+        nameEn: code,
+        headline: "你的人格类型是：",
+        slogan: "",
+        desc: "当前分值组合没有找到对应的人格配置。",
+        shareText: `我测出 ${code}。`
+      };
     }
 
     function axisSummary() {
@@ -543,33 +1095,50 @@
     function finishGame() {
       els.card.style.display = "none";
       document.getElementById("board").style.display = "none";
-      document.querySelector(".controls").style.display = "none";
+      els.gameControls.style.display = "none";
+
       const code = getTypeCode();
-      const type = getArchetype();
+      const type = getTypeConfig(code);
+
       els.result.classList.add("show");
-      els.typeName.textContent = type.name;
-      els.typeCode.textContent = `你的四轴代码：${code}`;
-      els.typeDesc.textContent = type.desc;
+      els.typeName.textContent = type.name || code;
+      els.typeCode.textContent = `${type.headline || "你的人格类型是："}${type.nameEn || code}（${code}）`;
+      els.typeDesc.textContent = [type.slogan, type.subline, type.desc].filter(Boolean).join("\n\n");
 
       const share = [
         "【死神值班：电车裁决】",
-        `我的结果：${type.name}（${code}）`,
+        `我的结果：${type.name || code}（${type.nameEn || code}）`,
+        type.shareText || "",
         axisSummary(),
         "你会签下怎样的死亡裁决？"
-      ].join("\n");
+      ].filter(Boolean).join("\n");
       els.shareText.textContent = share;
-      els.progress.textContent = "值班结束";
+      updateProgress(TOTAL_DISPLAY_STEPS, "值班结束");
     }
 
     function resetGame() {
-      Object.keys(axes).forEach((k) => axes[k].score = 0);
+      Object.keys(axes).forEach((k) => {
+        axes[k].score = 0;
+      });
+
       idx = 0;
+      gameStarted = true;
+      resetBranchVisitState();
+
       els.result.classList.remove("show");
+      els.mainMenu.hidden = true;
+      els.gameShell.hidden = false;
       els.card.style.display = "flex";
       document.getElementById("board").style.display = "block";
-      document.querySelector(".controls").style.display = "grid";
+      els.gameControls.style.display = "grid";
+
       renderAxes();
       renderCard();
+    }
+
+    function startGame() {
+      unlockSfx();
+      resetGame();
     }
 
     function onDragStart(clientX) {
@@ -584,7 +1153,6 @@
       offsetX = clientX - startX;
       const rotate = clamp(offsetX / 18, -14, 14);
       els.card.style.transform = `translateX(${offsetX}px) rotate(${rotate}deg)`;
-
       els.card.classList.toggle("show-left", offsetX < -40);
       els.card.classList.toggle("show-right", offsetX > 40);
     }
@@ -593,6 +1161,7 @@
       if (!dragging) return;
       dragging = false;
       els.card.style.transition = "transform 160ms ease, opacity 160ms ease";
+
       if (offsetX <= -SWIPE_THRESHOLD) {
         choose("left");
         return;
@@ -601,15 +1170,19 @@
         choose("right");
         return;
       }
+
       els.card.style.transform = "translateX(0) rotate(0deg)";
       els.card.classList.remove("show-left", "show-right");
     }
 
     els.btnLeft.addEventListener("click", () => choose("left"));
     els.btnRight.addEventListener("click", () => choose("right"));
+    els.startBtn.addEventListener("click", startGame);
+    els.musicToggle.addEventListener("click", toggleMusic);
+    els.mainMenu.addEventListener("pointerdown", () => switchBgm("menu", BGM.fadeMs, false), { once: true });
 
     document.addEventListener("keydown", (e) => {
-      if (idx >= cards.length) return;
+      if (!gameStarted || idx >= cards.length) return;
       if (["ArrowLeft", "a", "A"].includes(e.key)) choose("left");
       if (["ArrowRight", "d", "D"].includes(e.key)) choose("right");
     });
@@ -621,7 +1194,9 @@
       } catch {
         els.copyBtn.textContent = "复制失败，请手动复制";
       }
-      setTimeout(() => els.copyBtn.textContent = "复制分享文案", 1200);
+      setTimeout(() => {
+        els.copyBtn.textContent = "复制分享文案";
+      }, 1200);
     });
 
     els.restartBtn.addEventListener("click", resetGame);
@@ -634,8 +1209,20 @@
     els.card.addEventListener("pointerup", onDragEnd);
     els.card.addEventListener("pointercancel", onDragEnd);
 
-    renderAxes();
-    renderCard();
+    async function init() {
+      try {
+        await loadConfigs();
+        resetBranchVisitState();
+        renderAxes();
+        switchBgm("menu", BGM.fadeMs, false);
+      } catch (error) {
+        els.mainMenu.hidden = true;
+        els.gameShell.hidden = false;
+        showConfigError(error);
+      }
+    }
+
+    init();
   </script>
 </body>
 </html>
