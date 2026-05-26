@@ -89,6 +89,24 @@
       font-size: 14px;
     }
 
+    .audio-toggle {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 20;
+      width: 92px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      color: var(--text);
+      background: rgba(22, 27, 37, 0.92);
+      backdrop-filter: blur(10px);
+    }
+
+    .audio-toggle[aria-pressed="false"] {
+      color: var(--muted);
+    }
+
     .progress-track {
       position: relative;
       height: 10px;
@@ -121,6 +139,7 @@
       white-space: nowrap;
       border: 0;
     }
+
 
     .board {
       position: relative;
@@ -299,6 +318,7 @@
   </style>
 </head>
 <body>
+  <button class="audio-toggle" id="musicToggle" aria-pressed="true">音乐 ON</button>
   <main class="app">
     <section class="menu" id="mainMenu">
       <div class="muted">Death Shift Personality Test</div>
@@ -380,15 +400,99 @@
     };
 
     const BGM = {
-      menu: "submissions/austin/audio-placeholder-v01/assets/audio/music/00.mp3",
-      chapters: {
-        first: "submissions/austin/audio-placeholder-v01/assets/audio/music/01.mp3",
-        oneThird: "submissions/austin/audio-placeholder-v01/assets/audio/music/02.mp3",
-        twoThirds: "submissions/austin/audio-placeholder-v01/assets/audio/music/03.mp3",
-        finale: "submissions/austin/audio-placeholder-v01/assets/audio/music/04.mp3"
+      tracks: {
+        menu: {
+          url: "submissions/austin/audio-placeholder-v01/assets/audio/music/00.mp3",
+          anchors: {
+            start1: { at: 0, type: "intro" },
+            loop1: { at: 0, type: "intro" }
+          }
+        },
+        first: {
+          url: "submissions/austin/audio-placeholder-v01/assets/audio/music/01.mp3",
+          anchors: {
+            intro1: { at: 0, type: "intro" },
+            intro2: { at: 22, type: "intro" },
+            chorus1: { at: 45, type: "chorus" },
+            bridge1: { at: 67, type: "bridge" },
+            intro3: { at: 73, type: "intro" },
+            intro4: { at: 91, type: "intro" },
+            chorus2: { at: 101, type: "chorus" },
+            chorus3: { at: 113, type: "chorus" },
+            bridge2: { at: 124, type: "bridge" },
+            bridge3: { at: 135, type: "bridge" },
+            intro5: { at: 147, type: "intro" },
+            intro6: { at: 158, type: "intro" },
+            intro7: { at: 170, type: "intro" },
+            chorus4: { at: 180, type: "chorus" },
+            chorus5: { at: 192, type: "chorus" },
+            outro1: { at: 204, type: "outro" }
+          }
+        },
+        oneThird: {
+          url: "submissions/austin/audio-placeholder-v01/assets/audio/music/Dodo%20CyberHype.mp3",
+          anchors: {
+            intro1: { at: 0, type: "intro" },
+            intro2: { at: 22, type: "intro" },
+            chorus1: { at: 45, type: "chorus" },
+            bridge1: { at: 67, type: "bridge" },
+            intro3: { at: 73, type: "intro" },
+            intro4: { at: 91, type: "intro" },
+            chorus2: { at: 101, type: "chorus" },
+            chorus3: { at: 113, type: "chorus" },
+            bridge2: { at: 124, type: "bridge" },
+            bridge3: { at: 135, type: "bridge" },
+            intro5: { at: 147, type: "intro" },
+            intro6: { at: 158, type: "intro" },
+            intro7: { at: 170, type: "intro" },
+            chorus4: { at: 180, type: "chorus" },
+            chorus5: { at: 192, type: "chorus" },
+            outro1: { at: 204, type: "outro" }
+          }
+        },
+        twoThirds: {
+          url: "submissions/austin/audio-placeholder-v01/assets/audio/music/Judgment%20Ward01.mp3",
+          anchors: {
+            intro1: { at: 0, type: "intro" },
+            chorus1: { at: 45, type: "chorus" },
+            bridge1: { at: 75, type: "bridge" }
+          }
+        }
       },
-      volume: 0.58,
-      fadeMs: 1800
+      transitions: {
+        "menu->first": {
+          intro: [{ target: "intro1" }]
+        },
+        "first->oneThird": {
+          intro1: [{ target: "chorus1" }],
+          intro2: [{ target: "chorus1" }],
+          chorus1: [{ target: "bridge1" }],
+          bridge1: [{ target: "intro3" }],
+          intro3: [{ target: "chorus2" }],
+          intro4: [{ target: "chorus2" }],
+          chorus2: [{ target: "bridge2" }],
+          chorus3: [{ target: "bridge2" }],
+          bridge2: [{ target: "bridge3" }],
+          bridge3: [{ target: "intro5" }],
+          intro5: [{ target: "chorus4" }],
+          intro6: [{ target: "chorus4" }],
+          chorus4: [{ target: "bridge1" }],
+          chorus5: [{ target: "bridge1" }],
+          outro1: [{ target: "intro1" }],
+          default: [{ target: "intro1" }]
+        },
+        "oneThird->twoThirds": {
+          intro: [{ target: "intro1" }],
+          chorus: [{ target: "intro1" }],
+          bridge: [{ target: "intro1" }],
+          outro: [{ target: "intro1" }],
+          default: [{ target: "intro1" }]
+        }
+      },
+      volume: 0.17,
+      fadeMs: 1800,
+      preFadeMs: 2000,
+      anchorWaitMaxMs: 30000
     };
 
     const axes = {
@@ -402,6 +506,7 @@
       mainMenu: document.getElementById("mainMenu"),
       gameShell: document.getElementById("gameShell"),
       startBtn: document.getElementById("startBtn"),
+      musicToggle: document.getElementById("musicToggle"),
       card: document.getElementById("card"),
       tag: document.getElementById("tag"),
       title: document.getElementById("title"),
@@ -436,6 +541,8 @@
     let gameStarted = false;
     let currentBgm = null;
     let currentBgmKey = "";
+    let pendingBgmKey = "";
+    let musicEnabled = true;
 
     const sfxPool = SFX.cardMotion.map((sfx) => {
       const audio = new Audio(sfx.url);
@@ -493,8 +600,60 @@
       }, 40);
     }
 
-    function switchBgm(key, url, fadeMs = BGM.fadeMs) {
-      if (!url) return;
+    function sortedAnchors(track) {
+      return Object.entries(track?.anchors || {})
+        .map(([name, anchor]) => ({ name, ...anchor }))
+        .sort((a, b) => a.at - b.at);
+    }
+
+    function currentAnchorForTrack(key) {
+      const track = BGM.tracks[key];
+      if (!track || !currentBgm) return null;
+      return sortedAnchors(track).reduce((current, anchor) => {
+        return anchor.at <= currentBgm.currentTime ? anchor : current;
+      }, null);
+    }
+
+    function nextAnchorForTrack(key) {
+      const track = BGM.tracks[key];
+      if (!track || !currentBgm) return null;
+      return sortedAnchors(track).find((anchor) => anchor.at > currentBgm.currentTime) || null;
+    }
+
+    function chooseTransition(fromKey, toKey) {
+      const fromAnchor = currentAnchorForTrack(fromKey);
+      const fromType = fromAnchor?.type || "default";
+      const rule = BGM.transitions[`${fromKey}->${toKey}`] || {};
+      const options = rule[fromAnchor?.name] || rule[fromType] || rule.default || [{ target: "intro1" }];
+      const weighted = options.flatMap((option) => Array(option.weight || 1).fill(option));
+      return weighted[Math.floor(Math.random() * weighted.length)] || options[0];
+    }
+
+    function bgmEntryTime(key, anchorName) {
+      const targetTrack = BGM.tracks[key];
+      if (!targetTrack) return 0;
+      return targetTrack.anchors?.[anchorName]?.at || 0;
+    }
+
+    function msUntilNextMusicalAnchor(key) {
+      const nextAnchor = nextAnchorForTrack(key);
+      if (!nextAnchor) return 0;
+      const waitMs = (nextAnchor.at - currentBgm.currentTime) * 1000 - BGM.preFadeMs;
+      return Math.min(Math.max(waitMs, 0), BGM.anchorWaitMaxMs);
+    }
+
+    function switchBgm(key, fadeMs = BGM.fadeMs, waitForAnchor = true, lockedTransition = null) {
+      const track = BGM.tracks[key];
+      if (!track) return;
+      if (!musicEnabled) {
+        currentBgmKey = key;
+        if (currentBgm) {
+          currentBgm.pause();
+          currentBgm.currentTime = 0;
+          currentBgm = null;
+        }
+        return;
+      }
       if (currentBgmKey === key) {
         if (currentBgm && currentBgm.paused) {
           currentBgm.play().then(() => {
@@ -503,19 +662,38 @@
         }
         return;
       }
+
+      const previousKey = currentBgmKey;
+      const transition = lockedTransition || chooseTransition(previousKey, key);
+      const waitMs = waitForAnchor ? msUntilNextMusicalAnchor(previousKey) : 0;
+      if (waitMs > 0) {
+        pendingBgmKey = key;
+        setTimeout(() => {
+          if (pendingBgmKey === key) switchBgm(key, fadeMs, false, transition);
+        }, waitMs);
+        return;
+      }
+      pendingBgmKey = "";
       currentBgmKey = key;
 
-      const nextBgm = new Audio(url);
+      const nextBgm = new Audio(track.url);
       nextBgm.loop = true;
       nextBgm.preload = "auto";
       nextBgm.volume = 0;
+      nextBgm.currentTime = bgmEntryTime(key, transition.target);
 
       const previousBgm = currentBgm;
       currentBgm = nextBgm;
 
-      nextBgm.play().then(() => {
+      const startNextBgm = () => nextBgm.play().then(() => {
         fadeAudio(nextBgm, 0, BGM.volume, fadeMs);
       }).catch(() => {});
+
+      if (transition.silenceMs) {
+        setTimeout(startNextBgm, transition.silenceMs);
+      } else {
+        startNextBgm();
+      }
 
       if (previousBgm) {
         const previousVolume = previousBgm.volume;
@@ -527,20 +705,44 @@
     }
 
     function chapterBgmForIndex(cardIndex) {
-      if (!cards.length) return { key: "first", url: BGM.chapters.first };
-      const oneThird = Math.floor(cards.length / 3);
-      const twoThirds = Math.floor(cards.length * 2 / 3);
-      const finale = cards.length - 1;
+      if (!cards.length) return "first";
+      const oneThird = 8;
+      const twoThirds = 23;
 
-      if (cardIndex >= finale) return { key: "finale", url: BGM.chapters.finale };
-      if (cardIndex >= twoThirds) return { key: "twoThirds", url: BGM.chapters.twoThirds };
-      if (cardIndex >= oneThird) return { key: "oneThird", url: BGM.chapters.oneThird };
-      return { key: "first", url: BGM.chapters.first };
+      if (cardIndex >= twoThirds) return "twoThirds";
+      if (cardIndex >= oneThird) return "oneThird";
+      return "first";
     }
 
     function updateChapterBgm() {
-      const bgm = chapterBgmForIndex(idx);
-      switchBgm(bgm.key, bgm.url);
+      switchBgm(chapterBgmForIndex(idx));
+    }
+
+    function setMusicEnabled(enabled) {
+      musicEnabled = enabled;
+      els.musicToggle.setAttribute("aria-pressed", String(enabled));
+      els.musicToggle.textContent = enabled ? "音乐 ON" : "音乐 OFF";
+
+      if (!enabled) {
+        if (currentBgm) {
+          fadeAudio(currentBgm, currentBgm.volume, 0, 250, () => {
+            currentBgm.pause();
+          });
+        }
+        return;
+      }
+
+      if (gameStarted) {
+        currentBgmKey = "";
+        switchBgm(chapterBgmForIndex(idx), 500, false);
+      } else {
+        currentBgmKey = "";
+        switchBgm("menu", 500, false);
+      }
+    }
+
+    function toggleMusic() {
+      setMusicEnabled(!musicEnabled);
     }
 
     function resetBranchVisitState() {
@@ -976,7 +1178,8 @@
     els.btnLeft.addEventListener("click", () => choose("left"));
     els.btnRight.addEventListener("click", () => choose("right"));
     els.startBtn.addEventListener("click", startGame);
-    els.mainMenu.addEventListener("pointerdown", () => switchBgm("menu", BGM.menu), { once: true });
+    els.musicToggle.addEventListener("click", toggleMusic);
+    els.mainMenu.addEventListener("pointerdown", () => switchBgm("menu", BGM.fadeMs, false), { once: true });
 
     document.addEventListener("keydown", (e) => {
       if (!gameStarted || idx >= cards.length) return;
@@ -1011,7 +1214,7 @@
         await loadConfigs();
         resetBranchVisitState();
         renderAxes();
-        switchBgm("menu", BGM.menu);
+        switchBgm("menu", BGM.fadeMs, false);
       } catch (error) {
         els.mainMenu.hidden = true;
         els.gameShell.hidden = false;
