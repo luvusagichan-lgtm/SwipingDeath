@@ -338,7 +338,7 @@
 
     function resetBranchVisitState() {
       branchVisitState = Object.values(branchMergeRules).reduce((acc, rule) => {
-        acc[rule.group] = { visited: new Set() };
+        acc[rule.group] = { visited: new Set(), displayOrder: [] };
         return acc;
       }, {});
     }
@@ -364,10 +364,28 @@
       const mergeTarget = hasCardId(rule.target) ? rule.target : rule.fallbackTarget;
       if (mergeTarget && hasCardId(mergeTarget)) {
         state.visited.clear();
+        state.displayOrder = [];
         return mergeTarget;
       }
 
       return null;
+    }
+
+    function getDisplaySequence(card) {
+      const fallbackSequence = card.sequence ?? idx + 1;
+      const rule = branchMergeRules[String(card.id)];
+      if (!rule) {
+        return fallbackSequence;
+      }
+
+      const state = branchVisitState[rule.group] || { visited: new Set(), displayOrder: [] };
+      if (!state.displayOrder.includes(String(card.id))) {
+        state.displayOrder.push(String(card.id));
+      }
+      branchVisitState[rule.group] = state;
+
+      const branchPosition = state.displayOrder.indexOf(String(card.id));
+      return Number(rule.group) + Math.max(branchPosition, 0);
     }
 
     async function loadJson(url) {
@@ -446,7 +464,7 @@
       const card = cards[idx];
       const left = card.left || {};
       const right = card.right || {};
-      const displaySequence = card.sequence ?? idx + 1;
+      const displaySequence = getDisplaySequence(card);
       els.tag.textContent = card.tag || `裁决 ${displaySequence}`;
       els.title.textContent = card.title || card.text || "未命名裁决";
       els.body.textContent = card.body || card.text || "";
