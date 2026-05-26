@@ -37,6 +37,51 @@
       grid-template-columns: 1fr;
     }
 
+    .menu {
+      min-height: 520px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: linear-gradient(170deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      gap: 18px;
+      padding: 36px;
+      text-align: center;
+    }
+
+    .menu h1 {
+      margin: 0;
+      font-size: clamp(30px, 6vw, 56px);
+      line-height: 1.1;
+    }
+
+    .menu p {
+      margin: 0;
+      max-width: 560px;
+      color: var(--muted);
+      line-height: 1.7;
+      white-space: pre-line;
+    }
+
+    .start-button {
+      min-width: 180px;
+      padding: 14px 20px;
+      border-color: rgba(255, 212, 59, 0.45);
+      background: #1e2430;
+      font-size: 18px;
+    }
+
+    .game-shell {
+      display: grid;
+      gap: 16px;
+    }
+
+    .menu[hidden],
+    .game-shell[hidden] {
+      display: none;
+    }
+
     .topbar {
       display: flex;
       justify-content: space-between;
@@ -222,31 +267,41 @@
 </head>
 <body>
   <main class="app">
-    <div class="topbar">
-      <div id="progress">第 1 / 15 卡</div>
-      <div>操作：← / A 选左，→ / D 选右，或拖拽卡片</div>
-    </div>
-
-    <section class="board" id="board">
-      <article class="card" id="card">
-        <div class="left-flag" id="leftFlag"></div>
-        <div class="right-flag" id="rightFlag"></div>
-        <div class="card-tag" id="tag"></div>
-        <h2 id="title"></h2>
-        <p id="body"></p>
-        <div class="choice-hint">
-          <span id="leftChoice"></span>
-          <span id="rightChoice"></span>
-        </div>
-      </article>
+    <section class="menu" id="mainMenu">
+      <div class="muted">Death Shift Personality Test</div>
+      <h1>死神值班</h1>
+      <p>在人类生死之间刷卡。
+每一次选择，都会被记录。</p>
+      <button class="start-button" id="startBtn">开始游戏</button>
     </section>
 
-    <div class="controls">
-      <button id="btnLeft"></button>
-      <button id="btnRight"></button>
-    </div>
+    <section class="game-shell" id="gameShell" hidden>
+      <div class="topbar">
+        <div id="progress">第 1 / 15 卡</div>
+        <div>操作：← / A 选左，→ / D 选右，或拖拽卡片</div>
+      </div>
 
-    <section class="axis" id="axisBoard"></section>
+      <section class="board" id="board">
+        <article class="card" id="card">
+          <div class="left-flag" id="leftFlag"></div>
+          <div class="right-flag" id="rightFlag"></div>
+          <div class="card-tag" id="tag"></div>
+          <h2 id="title"></h2>
+          <p id="body"></p>
+          <div class="choice-hint">
+            <span id="leftChoice"></span>
+            <span id="rightChoice"></span>
+          </div>
+        </article>
+      </section>
+
+      <div class="controls" id="gameControls">
+        <button id="btnLeft"></button>
+        <button id="btnRight"></button>
+      </div>
+
+      <section class="axis" id="axisBoard"></section>
+    </section>
 
     <section class="result" id="result">
       <div class="muted">人格结算</div>
@@ -269,10 +324,29 @@
 
     const SFX = {
       cardMotion: [
-        "submissions/austin/audio-placeholder-v01/assets/audio/sfx/u_nharq4usid-swipe-255512.mp3",
-        "submissions/austin/audio-placeholder-v01/assets/audio/sfx/universfield-swoosh-026-454861.mp3"
+        {
+          url: "submissions/austin/audio-placeholder-v01/assets/audio/sfx/u_nharq4usid-swipe-255512.mp3",
+          gain: 1.0
+        },
+        {
+          url: "submissions/austin/audio-placeholder-v01/assets/audio/sfx/universfield-swoosh-026-454861.mp3",
+          gain: 0.28
+        }
       ],
-      volume: 0.42
+      volume: 0.42,
+      pitchJitter: 0.2
+    };
+
+    const BGM = {
+      menu: "submissions/austin/audio-placeholder-v01/assets/audio/music/00.mp3",
+      chapters: {
+        first: "submissions/austin/audio-placeholder-v01/assets/audio/music/01.mp3",
+        oneThird: "submissions/austin/audio-placeholder-v01/assets/audio/music/02.mp3",
+        twoThirds: "submissions/austin/audio-placeholder-v01/assets/audio/music/03.mp3",
+        finale: "submissions/austin/audio-placeholder-v01/assets/audio/music/04.mp3"
+      },
+      volume: 0.58,
+      fadeMs: 1800
     };
 
     const axes = {
@@ -283,6 +357,9 @@
     };
 
     const els = {
+      mainMenu: document.getElementById("mainMenu"),
+      gameShell: document.getElementById("gameShell"),
+      startBtn: document.getElementById("startBtn"),
       card: document.getElementById("card"),
       tag: document.getElementById("tag"),
       title: document.getElementById("title"),
@@ -301,7 +378,8 @@
       typeDesc: document.getElementById("typeDesc"),
       shareText: document.getElementById("shareText"),
       copyBtn: document.getElementById("copyBtn"),
-      restartBtn: document.getElementById("restartBtn")
+      restartBtn: document.getElementById("restartBtn"),
+      gameControls: document.getElementById("gameControls")
     };
 
     let cards = [];
@@ -311,6 +389,16 @@
     let dragging = false;
     let startX = 0;
     let offsetX = 0;
+    let sfxUnlocked = false;
+    let gameStarted = false;
+    let currentBgm = null;
+    let currentBgmKey = "";
+    const sfxPool = SFX.cardMotion.map((sfx) => {
+      const audio = new Audio(sfx.url);
+      audio.preload = "auto";
+      audio.volume = clamp(SFX.volume * (sfx.gain || 1), 0, 1);
+      return { audio, gain: sfx.gain || 1 };
+    });
     const SWIPE_THRESHOLD = 110;
     const branchMergeRules = {
       "10-L": { group: "10", counterpart: "10-R", target: "12" },
@@ -326,14 +414,82 @@
       return Math.min(max, Math.max(min, v));
     }
 
-    function playRandomSfx(urls = SFX.cardMotion) {
-      if (!urls.length) return;
-      const url = urls[Math.floor(Math.random() * urls.length)];
-      const audio = new Audio(url);
-      audio.volume = SFX.volume;
-      audio.play().catch(() => {
-        // Browsers block audio until the first user gesture; future card actions will unlock it.
-      });
+    function playCardMotionSfx() {
+      if (!sfxPool.length) return;
+      const { audio } = sfxPool[Math.floor(Math.random() * sfxPool.length)];
+      audio.pause();
+      audio.currentTime = 0;
+      audio.playbackRate = 1 + (Math.random() * 2 - 1) * SFX.pitchJitter;
+      audio.play().catch(() => {});
+    }
+
+    function unlockSfx() {
+      if (sfxUnlocked || !sfxPool.length) return;
+      sfxUnlocked = true;
+      sfxPool.forEach(({ audio }) => audio.load());
+    }
+
+    function fadeAudio(audio, from, to, durationMs, onDone) {
+      const startedAt = performance.now();
+      audio.volume = from;
+      const timer = setInterval(() => {
+        const t = clamp((performance.now() - startedAt) / durationMs, 0, 1);
+        audio.volume = from + (to - from) * t;
+        if (t >= 1) {
+          clearInterval(timer);
+          if (onDone) onDone();
+        }
+      }, 40);
+    }
+
+    function switchBgm(key, url, fadeMs = BGM.fadeMs) {
+      if (!url) return;
+      if (currentBgmKey === key) {
+        if (currentBgm && currentBgm.paused) {
+          currentBgm.play().then(() => {
+            fadeAudio(currentBgm, currentBgm.volume, BGM.volume, fadeMs);
+          }).catch(() => {});
+        }
+        return;
+      }
+      currentBgmKey = key;
+
+      const nextBgm = new Audio(url);
+      nextBgm.loop = true;
+      nextBgm.preload = "auto";
+      nextBgm.volume = 0;
+
+      const previousBgm = currentBgm;
+      currentBgm = nextBgm;
+
+      nextBgm.play().then(() => {
+        fadeAudio(nextBgm, 0, BGM.volume, fadeMs);
+      }).catch(() => {});
+
+      if (previousBgm) {
+        const previousVolume = previousBgm.volume;
+        fadeAudio(previousBgm, previousVolume, 0, fadeMs, () => {
+          previousBgm.pause();
+          previousBgm.currentTime = 0;
+        });
+      }
+    }
+
+    function chapterBgmForIndex(cardIndex) {
+      if (!cards.length) return { key: "first", url: BGM.chapters.first };
+      const oneThird = Math.floor(cards.length / 3);
+      const twoThirds = Math.floor(cards.length * 2 / 3);
+      const finale = cards.length - 1;
+
+      if (cardIndex >= finale) return { key: "finale", url: BGM.chapters.finale };
+      if (cardIndex >= twoThirds) return { key: "twoThirds", url: BGM.chapters.twoThirds };
+      if (cardIndex >= oneThird) return { key: "oneThird", url: BGM.chapters.oneThird };
+      return { key: "first", url: BGM.chapters.first };
+    }
+
+    function updateChapterBgm() {
+      const bgm = chapterBgmForIndex(idx);
+      switchBgm(bgm.key, bgm.url);
     }
 
     function resetBranchVisitState() {
@@ -418,8 +574,16 @@
     function showConfigError(error) {
       els.tag.textContent = "配置读取失败";
       els.title.textContent = "无法加载玩法配置";
+      const localPreviewHint = location.protocol === "file:" ? [
+        "你正在直接打开本地 index.html，浏览器会拦截本地 JSON 读取。",
+        "请双击 Start_Local_Preview.bat，或在仓库根目录运行：",
+        "python -m http.server 4174 --bind 127.0.0.1",
+        "然后打开：http://127.0.0.1:4174/index.html",
+        ""
+      ] : [];
       els.body.textContent = [
-        "请确认以下文件已经部署到 GitHub Pages：",
+        ...localPreviewHint,
+        "请确认以下配置文件可以访问：",
         CONFIG_URLS.story,
         CONFIG_URLS.types,
         "",
@@ -478,7 +642,7 @@
       els.card.style.opacity = "1";
       els.card.style.transform = "translateX(0px) rotate(0deg)";
       els.card.classList.remove("show-left", "show-right");
-      playRandomSfx();
+      updateChapterBgm();
     }
 
     function nextIndexFor(card, choice) {
@@ -498,7 +662,8 @@
       if (idx >= cards.length) return;
       const card = cards[idx];
       const choice = side === "left" ? card.left || {} : card.right || {};
-      playRandomSfx();
+      unlockSfx();
+      playCardMotionSfx();
       applyEffects(choice.effects);
 
       const dir = side === "left" ? -1 : 1;
@@ -548,7 +713,7 @@
     function finishGame() {
       els.card.style.display = "none";
       document.getElementById("board").style.display = "none";
-      document.querySelector(".controls").style.display = "none";
+      els.gameControls.style.display = "none";
       const code = getTypeCode();
       const type = getTypeConfig(code);
       els.result.classList.add("show");
@@ -570,13 +735,21 @@
     function resetGame() {
       Object.keys(axes).forEach((k) => axes[k].score = 0);
       idx = 0;
+      gameStarted = true;
       resetBranchVisitState();
       els.result.classList.remove("show");
+      els.mainMenu.hidden = true;
+      els.gameShell.hidden = false;
       els.card.style.display = "flex";
       document.getElementById("board").style.display = "block";
-      document.querySelector(".controls").style.display = "grid";
+      els.gameControls.style.display = "grid";
       renderAxes();
       renderCard();
+    }
+
+    function startGame() {
+      unlockSfx();
+      resetGame();
     }
 
     function onDragStart(clientX) {
@@ -614,9 +787,11 @@
 
     els.btnLeft.addEventListener("click", () => choose("left"));
     els.btnRight.addEventListener("click", () => choose("right"));
+    els.startBtn.addEventListener("click", startGame);
+    els.mainMenu.addEventListener("pointerdown", () => switchBgm("menu", BGM.menu), { once: true });
 
     document.addEventListener("keydown", (e) => {
-      if (idx >= cards.length) return;
+      if (!gameStarted || idx >= cards.length) return;
       if (["ArrowLeft", "a", "A"].includes(e.key)) choose("left");
       if (["ArrowRight", "d", "D"].includes(e.key)) choose("right");
     });
@@ -646,8 +821,10 @@
         await loadConfigs();
         resetBranchVisitState();
         renderAxes();
-        renderCard();
+        switchBgm("menu", BGM.menu);
       } catch (error) {
+        els.mainMenu.hidden = true;
+        els.gameShell.hidden = false;
         showConfigError(error);
       }
     }
