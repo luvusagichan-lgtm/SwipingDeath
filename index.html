@@ -371,7 +371,19 @@
             intro1: { at: 0, type: "intro" },
             intro2: { at: 22, type: "intro" },
             chorus1: { at: 45, type: "chorus" },
-            bridge1: { at: 75, type: "bridge" }
+            bridge1: { at: 67, type: "bridge" },
+            intro3: { at: 73, type: "intro" },
+            intro4: { at: 91, type: "intro" },
+            chorus2: { at: 101, type: "chorus" },
+            chorus3: { at: 113, type: "chorus" },
+            bridge2: { at: 124, type: "bridge" },
+            bridge3: { at: 135, type: "bridge" },
+            intro5: { at: 147, type: "intro" },
+            intro6: { at: 158, type: "intro" },
+            intro7: { at: 170, type: "intro" },
+            chorus4: { at: 180, type: "chorus" },
+            chorus5: { at: 192, type: "chorus" },
+            outro1: { at: 204, type: "outro" }
           }
         },
         oneThird: {
@@ -409,10 +421,21 @@
           intro: [{ target: "intro1" }]
         },
         "first->oneThird": {
-          intro: [{ target: "intro2" }, { target: "chorus1" }],
-          chorus: [{ target: "intro1" }],
-          bridge: [{ target: "intro1" }],
-          outro: [{ target: "intro1" }],
+          intro1: [{ target: "chorus1" }],
+          intro2: [{ target: "chorus1" }],
+          chorus1: [{ target: "bridge1" }],
+          bridge1: [{ target: "intro3" }],
+          intro3: [{ target: "chorus2" }],
+          intro4: [{ target: "chorus2" }],
+          chorus2: [{ target: "bridge2" }],
+          chorus3: [{ target: "bridge2" }],
+          bridge2: [{ target: "bridge3" }],
+          bridge3: [{ target: "intro5" }],
+          intro5: [{ target: "chorus4" }],
+          intro6: [{ target: "chorus4" }],
+          chorus4: [{ target: "bridge1" }],
+          chorus5: [{ target: "bridge1" }],
+          outro1: [{ target: "intro1" }],
           default: [{ target: "intro1" }]
         },
         "oneThird->twoThirds": {
@@ -548,7 +571,7 @@
       const fromAnchor = currentAnchorForTrack(fromKey);
       const fromType = fromAnchor?.type || "default";
       const rule = BGM.transitions[`${fromKey}->${toKey}`] || {};
-      const options = rule[fromType] || rule.default || [{ target: "intro1" }];
+      const options = rule[fromAnchor?.name] || rule[fromType] || rule.default || [{ target: "intro1" }];
       const weighted = options.flatMap((option) => Array(option.weight || 1).fill(option));
       return weighted[Math.floor(Math.random() * weighted.length)] || options[0];
     }
