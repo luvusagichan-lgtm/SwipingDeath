@@ -318,8 +318,14 @@
 
   <script>
     const CONFIG_URLS = {
-      story: "submissions/shinigami/config/shinigami_story_config.json",
-      types: "submissions/shinigami/config/shinigami_16types_config.json"
+      storyCandidates: [
+        "submissions/shinigami/config/shinigami_story_config.json",
+        "shinigami_story_config.json"
+      ],
+      typesCsvCandidates: [
+        "submissions/shinigami/config/shinigami_16types_config.csv",
+        "shinigami_16types_config.csv"
+      ]
     };
 
     const SFX = {
@@ -505,9 +511,7 @@
 
     function resolveBranchMergeNext(card) {
       const rule = branchMergeRules[String(card.id)];
-      if (!rule) {
-        return null;
-      }
+      if (!rule) return null;
 
       const state = branchVisitState[rule.group] || { visited: new Set() };
       state.visited.add(String(card.id));
@@ -530,9 +534,7 @@
     function getDisplaySequence(card) {
       const fallbackSequence = card.sequence ?? idx + 1;
       const rule = branchMergeRules[String(card.id)];
-      if (!rule) {
-        return fallbackSequence;
-      }
+      if (!rule) return fallbackSequence;
 
       const state = branchVisitState[rule.group] || { visited: new Set(), displayOrder: [] };
       if (!state.displayOrder.includes(String(card.id))) {
@@ -544,30 +546,135 @@
       return Number(rule.group) + Math.max(branchPosition, 0);
     }
 
-    async function loadJson(url) {
-      const response = await fetch(url, { cache: "no-store" });
-      if (!response.ok) {
-        throw new Error(${url} 加载失败：${response.status});
+    async function fetchFirstAvailable(urls, asText = false) {
+      const errors = [];
+      for (const url of urls) {
+        try {
+          const response = await fetch(url, { cache: "no-store" });
+          if (!response.ok) {
+            errors.push(`${url} -> ${response.status}`);
+            continue;
+          }
+          return asText ? response.text() : response.json();
+        } catch (err) {
+          errors.push(`${url} -> ${err.message}`);
+        }
       }
-      return response.json();
+      throw new Error("所有候选路径均加载失败：\n" + errors.join("\n"));
+    }
+
+    function parseCSV(text) {
+      const src = String(text || "").replace(/^\uFEFF/, "");
+      const rows = [];
+      let row = [];
+      let cell = "";
+      let inQuotes = false;
+
+      for (let i = 0; i < src.length; i++) {
+        const ch = src[i];
+
+        if (inQuotes) {
+          if (ch === '"') {
+            if (src[i + 1] === '"') {
+              cell += '"';
+              i++;
+            } else {
+              inQuotes = false;
+            }
+          } else {
+            cell += ch;
+          }
+          continue;
+        }
+
+        if (ch === '"') {
+          inQuotes = true;
+        } else if (ch === ",") {
+          row.push(cell);
+          cell = "";
+        } else if (ch === "\n") {
+          row.push(cell);
+          rows.push(row);
+          row = [];
+          cell = "";
+        } else if (ch === "\r") {
+          // skip
+        } else {
+          cell += ch;
+        }
+      }
+
+      row.push(cell);
+      if (row.length > 1 || row[0] !== "") rows.push(row);
+
+      return rows;
+    }
+
+    function normalizeKey(key) {
+      return String(key || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "")
+        .replace(/[_-]/g, "");
+    }
+
+    function getField(obj, aliases, fallback = "") {
+      for (const key of Object.keys(obj)) {
+        const n = normalizeKey(key);
+        if (aliases.includes(n)) return (obj[key] ?? "").toString().trim();
+      }
+      return fallback;
+    }
+
+    function buildTypeConfigMapFromCsv(csvText) {
+      const rows = parseCSV(csvText);
+      if (!rows.length) return {};
+
+      const headers = rows[0].map((h) => String(h || "").trim());
+      const map = {};
+
+      for (let i = 1; i < rows.length; i++) {
+        const cols = rows[i];
+        if (!cols || cols.every((v) => String(v || "").trim() === "")) continue;
+
+        const rowObj = {};
+        headers.forEach((h, idx2) => {
+          rowObj[h] = (cols[idx2] ?? "").toString().trim();
+        });
+
+        const code = getField(rowObj, ["code", "type", "typecode", "mbti", "nameen"], "").toUpperCase();
+        if (!code) continue;
+
+        map[code] = {
+          name: getField(rowObj, ["name", "typename", "cnname", "chinesename"], code),
+          nameEn: getField(rowObj, ["nameen", "enname", "englishname", "typeen"], code),
+          headline: getField(rowObj, ["headline", "title", "resulttitle"], "你的人格类型是："),
+          slogan: getField(rowObj, ["slogan", "tagline", "subtitle"], ""),
+          subline: getField(rowObj, ["subline", "subheadline"], ""),
+          desc: getField(rowObj, ["desc", "description", "typedesc", "profile"], ""),
+          shareText: getField(rowObj, ["sharetext", "share", "sharecopy"], "")
+        };
+      }
+
+      return map;
     }
 
     async function loadConfigs() {
       els.progress.textContent = "正在读取配置...";
-      const [storyConfig, typeConfig] = await Promise.all([
-        loadJson(CONFIG_URLS.story),
-        loadJson(CONFIG_URLS.types)
+
+      const [storyConfig, typesCsvText] = await Promise.all([
+        fetchFirstAvailable(CONFIG_URLS.storyCandidates, false),
+        fetchFirstAvailable(CONFIG_URLS.typesCsvCandidates, true)
       ]);
 
       cards = Array.isArray(storyConfig.cards) ? storyConfig.cards : [];
-      typeConfigs = typeConfig.types || {};
+      typeConfigs = buildTypeConfigMapFromCsv(typesCsvText);
+
       cardIndexById = Object.fromEntries(cards.map((card, index) => [String(card.id), index]));
 
-      if (!cards.length) {
-        throw new Error("剧情配置里没有可用卡牌");
-      }
+      if (!cards.length) throw new Error("剧情配置里没有可用卡牌");
       if (!Object.keys(typeConfigs).length) {
-        throw new Error("人格配置里没有可用类型");
+        throw new Error("CSV 里没有解析出人格类型，请检查列名是否含有 code/type/name/desc 等字段");
       }
     }
 
@@ -575,7 +682,7 @@
       els.tag.textContent = "配置读取失败";
       els.title.textContent = "无法加载玩法配置";
       const localPreviewHint = location.protocol === "file:" ? [
-        "你正在直接打开本地 index.html，浏览器会拦截本地 JSON 读取。",
+        "你正在直接打开本地 index.html，浏览器会拦截本地配置读取。",
         "请双击 Start_Local_Preview.bat，或在仓库根目录运行：",
         "python -m http.server 4174 --bind 127.0.0.1",
         "然后打开：http://127.0.0.1:4174/index.html",
@@ -583,9 +690,11 @@
       ] : [];
       els.body.textContent = [
         ...localPreviewHint,
-        "请确认以下配置文件可以访问：",
-        CONFIG_URLS.story,
-        CONFIG_URLS.types,
+        "请确认以下配置文件至少有一个路径可访问：",
+        "剧情：",
+        ...CONFIG_URLS.storyCandidates.map((p) => "  - " + p),
+        "人格 CSV：",
+        ...CONFIG_URLS.typesCsvCandidates.map((p) => "  - " + p),
         "",
         error.message
       ].join("\n");
@@ -608,14 +717,14 @@
       const rows = Object.entries(axes).map(([k, axis]) => {
         const score = clamp(axis.score, -60, 60);
         const width = Math.abs(score) / 60 * 100;
-        return 
+        return `
           <div class="axis-row">
             <span>${axis.left}</span>
             <div class="bar"><div class="bar-fill" style="width:${width}%"></div></div>
             <span style="text-align:right">${axis.right}</span>
             <span class="muted" style="grid-column: 1 / 4;">${k}：${score >= 0 ? "偏" + axis.left : "偏" + axis.right}（${Math.abs(score)}）</span>
           </div>
-        ;
+        `;
       }).join("");
       els.axisBoard.innerHTML = rows;
     }
@@ -629,7 +738,7 @@
       const left = card.left || {};
       const right = card.right || {};
       const displaySequence = getDisplaySequence(card);
-      els.tag.textContent = card.tag || 裁决 ${displaySequence};
+      els.tag.textContent = card.tag || `裁决 ${displaySequence}`;
       els.title.textContent = card.title || card.text || "未命名裁决";
       els.body.textContent = card.body || card.text || "";
       els.leftChoice.textContent = "← " + (left.label || "左选项");
@@ -638,7 +747,7 @@
       els.btnRight.textContent = "右：" + (right.label || "右选项");
       els.leftFlag.textContent = "左：" + (left.label || "左选项");
       els.rightFlag.textContent = "右：" + (right.label || "右选项");
-      els.progress.textContent = 第 ${displaySequence} / ${cards.length} 卡;
+      els.progress.textContent = `第 ${displaySequence} / ${cards.length} 卡`;
       els.card.style.opacity = "1";
       els.card.style.transform = "translateX(0px) rotate(0deg)";
       els.card.classList.remove("show-left", "show-right");
@@ -667,7 +776,7 @@
       applyEffects(choice.effects);
 
       const dir = side === "left" ? -1 : 1;
-      els.card.style.transform = translateX(${dir * 420}px) rotate(${dir * 12}deg);
+      els.card.style.transform = `translateX(${dir * 420}px) rotate(${dir * 12}deg)`;
       els.card.style.opacity = "0";
 
       setTimeout(() => {
@@ -692,7 +801,7 @@
         headline: "你的人格类型是：",
         slogan: "",
         desc: "当前分值组合没有找到对应的人格配置。",
-        shareText: 我测出${code}。
+        shareText: `我测出${code}。`
       };
     }
 
@@ -706,7 +815,7 @@
       return Object.keys(mapping).map((k) => {
         const v = axes[k].score;
         const label = v >= 0 ? mapping[k][0] : mapping[k][1];
-        return ${label} ${Math.abs(v)};
+        return `${label} ${Math.abs(v)}`;
       }).join(" | ");
     }
 
@@ -718,12 +827,12 @@
       const type = getTypeConfig(code);
       els.result.classList.add("show");
       els.typeName.textContent = type.name || code;
-      els.typeCode.textContent = ${type.headline || "你的人格类型是："}${type.nameEn || code}（${code}）;
+      els.typeCode.textContent = `${type.headline || "你的人格类型是："}${type.nameEn || code}（${code}）`;
       els.typeDesc.textContent = [type.slogan, type.subline, type.desc].filter(Boolean).join("\n\n");
 
       const share = [
         "【死神值班：电车裁决】",
-        我的结果：${type.name || code}（${type.nameEn || code}）,
+        `我的结果：${type.name || code}（${type.nameEn || code}）`,
         type.shareText || "",
         axisSummary(),
         "你会签下怎样的死亡裁决？"
@@ -763,7 +872,7 @@
       if (!dragging) return;
       offsetX = clientX - startX;
       const rotate = clamp(offsetX / 18, -14, 14);
-      els.card.style.transform = translateX(${offsetX}px) rotate(${rotate}deg);
+      els.card.style.transform = `translateX(${offsetX}px) rotate(${rotate}deg)`;
 
       els.card.classList.toggle("show-left", offsetX < -40);
       els.card.classList.toggle("show-right", offsetX > 40);
