@@ -918,6 +918,7 @@
           name: getField(rowObj, ["name", "typeName", "cnName", "中文名", "类型名"], code),
           nameEn: getField(rowObj, ["nameEn", "enName", "englishName", "英文名"], code),
           headline: getField(rowObj, ["headline", "title", "resultTitle", "标题"], "你的人格类型是："),
+          quickreadBody: getField(rowObj, ["quickread_body", "quickreadbody", "quickReadBody"], ""),
           slogan: getField(rowObj, ["slogan", "tagline", "标语"], ""),
           subline: getField(rowObj, ["subline", "副标题"], ""),
           desc: getField(rowObj, ["desc", "description", "typeDesc", "描述"], ""),
@@ -1103,7 +1104,12 @@
       els.result.classList.add("show");
       els.typeName.textContent = type.name || code;
       els.typeCode.textContent = `${type.headline || "你的人格类型是："}${type.nameEn || code}（${code}）`;
-      els.typeDesc.textContent = [type.slogan, type.subline, type.desc].filter(Boolean).join("\n\n");
+      els.typeDesc.textContent = [
+        type.quickreadBody,
+        type.desc,
+        type.slogan,
+        type.subline
+      ].filter(Boolean).join("\n\n");
 
       const share = [
         "【死神值班：电车裁决】",
