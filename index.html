@@ -424,7 +424,7 @@
       },
       volume: 0.17,
       fadeMs: 1800,
-      anchorWaitMaxMs: 4000
+      anchorWaitMaxMs: 30000
     };
 
     const axes = {
@@ -586,7 +586,7 @@
       }
 
       const previousKey = currentBgmKey;
-      const waitMs = 0;
+      const waitMs = waitForAnchor ? msUntilNextMusicalAnchor(previousKey) : 0;
       if (waitMs > 0) {
         pendingBgmKey = key;
         setTimeout(() => {
