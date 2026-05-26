@@ -1106,14 +1106,14 @@
       const code = getTypeCode();
       const type = getTypeConfig(code);
       const typeLabel = type.name || code;
-      const typeTitle = [code, type.slogan].filter(Boolean).join(" ");
+      const typeTitle = type.slogan || "";
       const typeMeta = [
         type.subline,
         `${type.headline || "你的人格类型是："}${code}（${typeLabel}）`
       ].filter(Boolean).join("\n");
 
       els.result.classList.add("show");
-      els.typeName.textContent = typeTitle || code;
+      els.typeName.textContent = typeTitle;
       els.typeCode.textContent = typeMeta;
       els.typeDesc.textContent = [
         type.quickreadBody,
