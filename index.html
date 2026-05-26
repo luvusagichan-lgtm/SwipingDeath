@@ -399,12 +399,14 @@
     let gameStarted = false;
     let currentBgm = null;
     let currentBgmKey = "";
+
     const sfxPool = SFX.cardMotion.map((sfx) => {
       const audio = new Audio(sfx.url);
       audio.preload = "auto";
       audio.volume = clamp(SFX.volume * (sfx.gain || 1), 0, 1);
       return { audio, gain: sfx.gain || 1 };
     });
+
     const SWIPE_THRESHOLD = 110;
     const branchMergeRules = {
       "10-L": { group: "10", counterpart: "10-R", target: "12" },
@@ -513,7 +515,7 @@
       const rule = branchMergeRules[String(card.id)];
       if (!rule) return null;
 
-      const state = branchVisitState[rule.group] || { visited: new Set() };
+      const state = branchVisitState[rule.group] || { visited: new Set(), displayOrder: [] };
       state.visited.add(String(card.id));
       branchVisitState[rule.group] = state;
 
@@ -546,21 +548,21 @@
       return Number(rule.group) + Math.max(branchPosition, 0);
     }
 
-    async function fetchFirstAvailable(urls, asText = false) {
+    async function fetchFirstAvailable(urlCandidates, asText = false) {
       const errors = [];
-      for (const url of urls) {
+      for (const url of urlCandidates) {
         try {
           const response = await fetch(url, { cache: "no-store" });
           if (!response.ok) {
             errors.push(`${url} -> ${response.status}`);
             continue;
           }
-          return asText ? response.text() : response.json();
+          return asText ? await response.text() : await response.json();
         } catch (err) {
           errors.push(`${url} -> ${err.message}`);
         }
       }
-      throw new Error("所有候选路径均加载失败：\n" + errors.join("\n"));
+      throw new Error("配置读取失败：\n" + errors.join("\n"));
     }
 
     function parseCSV(text) {
@@ -574,9 +576,9 @@
         const ch = src[i];
 
         if (inQuotes) {
-          if (ch === '"') {
-            if (src[i + 1] === '"') {
-              cell += '"';
+          if (ch === "\"") {
+            if (src[i + 1] === "\"") {
+              cell += "\"";
               i++;
             } else {
               inQuotes = false;
@@ -584,44 +586,44 @@
           } else {
             cell += ch;
           }
-          continue;
-        }
-
-        if (ch === '"') {
-          inQuotes = true;
-        } else if (ch === ",") {
-          row.push(cell);
-          cell = "";
-        } else if (ch === "\n") {
-          row.push(cell);
-          rows.push(row);
-          row = [];
-          cell = "";
-        } else if (ch === "\r") {
-          // skip
         } else {
-          cell += ch;
+          if (ch === "\"") {
+            inQuotes = true;
+          } else if (ch === ",") {
+            row.push(cell);
+            cell = "";
+          } else if (ch === "\n") {
+            row.push(cell);
+            rows.push(row);
+            row = [];
+            cell = "";
+          } else if (ch === "\r") {
+            // skip
+          } else {
+            cell += ch;
+          }
         }
       }
 
       row.push(cell);
       if (row.length > 1 || row[0] !== "") rows.push(row);
-
       return rows;
     }
 
-    function normalizeKey(key) {
-      return String(key || "")
+    function normalizeKey(k) {
+      return String(k || "")
         .trim()
         .toLowerCase()
         .replace(/\s+/g, "")
         .replace(/[_-]/g, "");
     }
 
-    function getField(obj, aliases, fallback = "") {
-      for (const key of Object.keys(obj)) {
-        const n = normalizeKey(key);
-        if (aliases.includes(n)) return (obj[key] ?? "").toString().trim();
+    function getField(rowObj, aliasKeys, fallback = "") {
+      const normalizedAlias = aliasKeys.map(normalizeKey);
+      for (const key of Object.keys(rowObj)) {
+        if (normalizedAlias.includes(normalizeKey(key))) {
+          return String(rowObj[key] ?? "").trim();
+        }
       }
       return fallback;
     }
@@ -630,29 +632,29 @@
       const rows = parseCSV(csvText);
       if (!rows.length) return {};
 
-      const headers = rows[0].map((h) => String(h || "").trim());
+      const headers = rows[0].map(h => String(h || "").trim());
       const map = {};
 
       for (let i = 1; i < rows.length; i++) {
         const cols = rows[i];
-        if (!cols || cols.every((v) => String(v || "").trim() === "")) continue;
+        if (!cols || cols.every(v => String(v || "").trim() === "")) continue;
 
         const rowObj = {};
         headers.forEach((h, idx2) => {
-          rowObj[h] = (cols[idx2] ?? "").toString().trim();
+          rowObj[h] = String(cols[idx2] ?? "").trim();
         });
 
-        const code = getField(rowObj, ["code", "type", "typecode", "mbti", "nameen"], "").toUpperCase();
+        const code = getField(rowObj, ["code", "type", "typecode", "mbti", "nameEn", "类型代号"]).toUpperCase();
         if (!code) continue;
 
         map[code] = {
-          name: getField(rowObj, ["name", "typename", "cnname", "chinesename"], code),
-          nameEn: getField(rowObj, ["nameen", "enname", "englishname", "typeen"], code),
-          headline: getField(rowObj, ["headline", "title", "resulttitle"], "你的人格类型是："),
-          slogan: getField(rowObj, ["slogan", "tagline", "subtitle"], ""),
-          subline: getField(rowObj, ["subline", "subheadline"], ""),
-          desc: getField(rowObj, ["desc", "description", "typedesc", "profile"], ""),
-          shareText: getField(rowObj, ["sharetext", "share", "sharecopy"], "")
+          name: getField(rowObj, ["name", "typeName", "cnName", "中文名", "类型名"], code),
+          nameEn: getField(rowObj, ["nameEn", "enName", "englishName", "英文名"], code),
+          headline: getField(rowObj, ["headline", "title", "resultTitle", "标题"], "你的人格类型是："),
+          slogan: getField(rowObj, ["slogan", "tagline", "标语"], ""),
+          subline: getField(rowObj, ["subline", "副标题"], ""),
+          desc: getField(rowObj, ["desc", "description", "typeDesc", "描述"], ""),
+          shareText: getField(rowObj, ["shareText", "share", "分享文案"], "")
         };
       }
 
@@ -668,36 +670,37 @@
       ]);
 
       cards = Array.isArray(storyConfig.cards) ? storyConfig.cards : [];
+      cardIndexById = Object.fromEntries(cards.map((card, index) => [String(card.id), index]));
       typeConfigs = buildTypeConfigMapFromCsv(typesCsvText);
 
-      cardIndexById = Object.fromEntries(cards.map((card, index) => [String(card.id), index]));
-
-      if (!cards.length) throw new Error("剧情配置里没有可用卡牌");
+      if (!cards.length) {
+        throw new Error("剧情配置里没有可用卡牌");
+      }
       if (!Object.keys(typeConfigs).length) {
-        throw new Error("CSV 里没有解析出人格类型，请检查列名是否含有 code/type/name/desc 等字段");
+        throw new Error("CSV 解析完成，但没有得到人格类型。请检查 CSV 表头是否包含 code/type 等字段。");
       }
     }
 
     function showConfigError(error) {
       els.tag.textContent = "配置读取失败";
       els.title.textContent = "无法加载玩法配置";
+
       const localPreviewHint = location.protocol === "file:" ? [
-        "你正在直接打开本地 index.html，浏览器会拦截本地配置读取。",
-        "请双击 Start_Local_Preview.bat，或在仓库根目录运行：",
-        "python -m http.server 4174 --bind 127.0.0.1",
-        "然后打开：http://127.0.0.1:4174/index.html",
+        "你正在直接双击打开 index.html，本地文件模式会拦截 fetch。",
+        "请用本地预览启动后再访问（http://127.0.0.1:4174/index.html）。",
         ""
       ] : [];
+
       els.body.textContent = [
         ...localPreviewHint,
-        "请确认以下配置文件至少有一个路径可访问：",
-        "剧情：",
-        ...CONFIG_URLS.storyCandidates.map((p) => "  - " + p),
-        "人格 CSV：",
-        ...CONFIG_URLS.typesCsvCandidates.map((p) => "  - " + p),
+        "请确认以下文件可访问：",
+        ...CONFIG_URLS.storyCandidates.map(p => `剧情：${p}`),
+        ...CONFIG_URLS.typesCsvCandidates.map(p => `人格CSV：${p}`),
         "",
+        "错误信息：",
         error.message
       ].join("\n");
+
       els.leftChoice.textContent = "";
       els.rightChoice.textContent = "";
       els.btnLeft.textContent = "配置未加载";
@@ -716,7 +719,7 @@
     function renderAxes() {
       const rows = Object.entries(axes).map(([k, axis]) => {
         const score = clamp(axis.score, -60, 60);
-        const width = Math.abs(score) / 60 * 100;
+        const width = (Math.abs(score) / 60) * 100;
         return `
           <div class="axis-row">
             <span>${axis.left}</span>
@@ -738,6 +741,7 @@
       const left = card.left || {};
       const right = card.right || {};
       const displaySequence = getDisplaySequence(card);
+
       els.tag.textContent = card.tag || `裁决 ${displaySequence}`;
       els.title.textContent = card.title || card.text || "未命名裁决";
       els.body.textContent = card.body || card.text || "";
@@ -748,6 +752,7 @@
       els.leftFlag.textContent = "左：" + (left.label || "左选项");
       els.rightFlag.textContent = "右：" + (right.label || "右选项");
       els.progress.textContent = `第 ${displaySequence} / ${cards.length} 卡`;
+
       els.card.style.opacity = "1";
       els.card.style.transform = "translateX(0px) rotate(0deg)";
       els.card.classList.remove("show-left", "show-right");
@@ -769,8 +774,9 @@
 
     function choose(side) {
       if (idx >= cards.length) return;
+
       const card = cards[idx];
-      const choice = side === "left" ? card.left || {} : card.right || {};
+      const choice = side === "left" ? (card.left || {}) : (card.right || {});
       unlockSfx();
       playCardMotionSfx();
       applyEffects(choice.effects);
@@ -801,7 +807,7 @@
         headline: "你的人格类型是：",
         slogan: "",
         desc: "当前分值组合没有找到对应的人格配置。",
-        shareText: `我测出${code}。`
+        shareText: `我测出 ${code}。`
       };
     }
 
@@ -823,8 +829,10 @@
       els.card.style.display = "none";
       document.getElementById("board").style.display = "none";
       els.gameControls.style.display = "none";
+
       const code = getTypeCode();
       const type = getTypeConfig(code);
+
       els.result.classList.add("show");
       els.typeName.textContent = type.name || code;
       els.typeCode.textContent = `${type.headline || "你的人格类型是："}${type.nameEn || code}（${code}）`;
@@ -842,16 +850,21 @@
     }
 
     function resetGame() {
-      Object.keys(axes).forEach((k) => axes[k].score = 0);
+      Object.keys(axes).forEach((k) => {
+        axes[k].score = 0;
+      });
+
       idx = 0;
       gameStarted = true;
       resetBranchVisitState();
+
       els.result.classList.remove("show");
       els.mainMenu.hidden = true;
       els.gameShell.hidden = false;
       els.card.style.display = "flex";
       document.getElementById("board").style.display = "block";
       els.gameControls.style.display = "grid";
+
       renderAxes();
       renderCard();
     }
@@ -873,7 +886,6 @@
       offsetX = clientX - startX;
       const rotate = clamp(offsetX / 18, -14, 14);
       els.card.style.transform = `translateX(${offsetX}px) rotate(${rotate}deg)`;
-
       els.card.classList.toggle("show-left", offsetX < -40);
       els.card.classList.toggle("show-right", offsetX > 40);
     }
@@ -882,6 +894,7 @@
       if (!dragging) return;
       dragging = false;
       els.card.style.transition = "transform 160ms ease, opacity 160ms ease";
+
       if (offsetX <= -SWIPE_THRESHOLD) {
         choose("left");
         return;
@@ -890,6 +903,7 @@
         choose("right");
         return;
       }
+
       els.card.style.transform = "translateX(0) rotate(0deg)";
       els.card.classList.remove("show-left", "show-right");
     }
@@ -912,7 +926,9 @@
       } catch {
         els.copyBtn.textContent = "复制失败，请手动复制";
       }
-      setTimeout(() => els.copyBtn.textContent = "复制分享文案", 1200);
+      setTimeout(() => {
+        els.copyBtn.textContent = "复制分享文案";
+      }, 1200);
     });
 
     els.restartBtn.addEventListener("click", resetGame);
