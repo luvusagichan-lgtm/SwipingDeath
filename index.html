@@ -342,8 +342,7 @@
       chapters: {
         first: "submissions/austin/audio-placeholder-v01/assets/audio/music/01.mp3",
         oneThird: "submissions/austin/audio-placeholder-v01/assets/audio/music/02.mp3",
-        twoThirds: "submissions/austin/audio-placeholder-v01/assets/audio/music/03.mp3",
-        finale: "submissions/austin/audio-placeholder-v01/assets/audio/music/04.mp3"
+        twoThirds: "submissions/austin/audio-placeholder-v01/assets/audio/music/03.mp3"
       },
       volume: 0.58,
       fadeMs: 1800
@@ -479,9 +478,7 @@
       if (!cards.length) return { key: "first", url: BGM.chapters.first };
       const oneThird = Math.floor(cards.length / 3);
       const twoThirds = Math.floor(cards.length * 2 / 3);
-      const finale = cards.length - 1;
 
-      if (cardIndex >= finale) return { key: "finale", url: BGM.chapters.finale };
       if (cardIndex >= twoThirds) return { key: "twoThirds", url: BGM.chapters.twoThirds };
       if (cardIndex >= oneThird) return { key: "oneThird", url: BGM.chapters.oneThird };
       return { key: "first", url: BGM.chapters.first };
