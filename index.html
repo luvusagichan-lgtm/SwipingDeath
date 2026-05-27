@@ -677,6 +677,18 @@
       typesCsvCandidates: [
         "submissions/shinigami/config/shinigami_16types_config.csv",
         "shinigami_16types_config.csv"
+      ],
+      bgmTracksCsvCandidates: [
+        "submissions/austin/audio-placeholder-v01/assets/audio/bgm_config/bgm_tracks.csv",
+        "bgm_tracks.csv"
+      ],
+      bgmAnchorsCsvCandidates: [
+        "submissions/austin/audio-placeholder-v01/assets/audio/bgm_config/bgm_anchors.csv",
+        "bgm_anchors.csv"
+      ],
+      bgmTransitionsCsvCandidates: [
+        "submissions/austin/audio-placeholder-v01/assets/audio/bgm_config/bgm_transitions.csv",
+        "bgm_transitions.csv"
       ]
     };
 
@@ -696,98 +708,11 @@
     };
 
     const BGM = {
-      tracks: {
-        menu: {
-          url: "submissions/austin/audio-placeholder-v01/assets/audio/music/00.mp3",
-          anchors: {
-            start1: { at: 0, type: "intro" },
-            loop1: { at: 0, type: "intro" }
-          }
-        },
-        first: {
-          url: "submissions/austin/audio-placeholder-v01/assets/audio/music/01.mp3",
-          anchors: {
-            intro1: { at: 0, type: "intro" },
-            intro2: { at: 22, type: "intro" },
-            chorus1: { at: 45, type: "chorus" },
-            bridge1: { at: 67, type: "bridge" },
-            intro3: { at: 73, type: "intro" },
-            intro4: { at: 91, type: "intro" },
-            chorus2: { at: 101, type: "chorus" },
-            chorus3: { at: 113, type: "chorus" },
-            bridge2: { at: 124, type: "bridge" },
-            bridge3: { at: 135, type: "bridge" },
-            intro5: { at: 147, type: "intro" },
-            intro6: { at: 158, type: "intro" },
-            intro7: { at: 170, type: "intro" },
-            chorus4: { at: 180, type: "chorus" },
-            chorus5: { at: 192, type: "chorus" },
-            outro1: { at: 204, type: "outro" }
-          }
-        },
-        oneThird: {
-          url: "submissions/austin/audio-placeholder-v01/assets/audio/music/Dodo%20CyberHype.mp3",
-          anchors: {
-            intro1: { at: 0, type: "intro" },
-            intro2: { at: 22, type: "intro" },
-            chorus1: { at: 45, type: "chorus" },
-            bridge1: { at: 67, type: "bridge" },
-            intro3: { at: 73, type: "intro" },
-            intro4: { at: 91, type: "intro" },
-            chorus2: { at: 101, type: "chorus" },
-            chorus3: { at: 113, type: "chorus" },
-            bridge2: { at: 124, type: "bridge" },
-            bridge3: { at: 135, type: "bridge" },
-            intro5: { at: 147, type: "intro" },
-            intro6: { at: 158, type: "intro" },
-            intro7: { at: 170, type: "intro" },
-            chorus4: { at: 180, type: "chorus" },
-            chorus5: { at: 192, type: "chorus" },
-            outro1: { at: 204, type: "outro" }
-          }
-        },
-        twoThirds: {
-          url: "submissions/austin/audio-placeholder-v01/assets/audio/music/Judgment%20Ward01.mp3",
-          anchors: {
-            intro1: { at: 0, type: "intro" },
-            chorus1: { at: 45, type: "chorus" },
-            bridge1: { at: 75, type: "bridge" }
-          }
-        }
-      },
-      transitions: {
-        "menu->first": {
-          intro: [{ target: "intro1" }]
-        },
-        "first->oneThird": {
-          intro1: [{ target: "chorus1" }],
-          intro2: [{ target: "chorus1" }],
-          chorus1: [{ target: "bridge1" }],
-          bridge1: [{ target: "intro3" }],
-          intro3: [{ target: "chorus2" }],
-          intro4: [{ target: "chorus2" }],
-          chorus2: [{ target: "bridge2" }],
-          chorus3: [{ target: "bridge2" }],
-          bridge2: [{ target: "bridge3" }],
-          bridge3: [{ target: "intro5" }],
-          intro5: [{ target: "chorus4" }],
-          intro6: [{ target: "chorus4" }],
-          chorus4: [{ target: "bridge1" }],
-          chorus5: [{ target: "bridge1" }],
-          outro1: [{ target: "intro1" }],
-          default: [{ target: "intro1" }]
-        },
-        "oneThird->twoThirds": {
-          intro: [{ target: "intro1" }],
-          chorus: [{ target: "intro1" }],
-          bridge: [{ target: "intro1" }],
-          outro: [{ target: "intro1" }],
-          default: [{ target: "intro1" }]
-        }
-      },
+      tracks: {},
+      transitions: {},
       volume: 0.17,
       fadeMs: 1800,
-      preFadeMs: 2000,
+      preFadeMs: 1500,
       anchorWaitMaxMs: 30000
     };
 
@@ -1619,15 +1544,84 @@
       return map;
     }
 
+    function rowsToObjects(csvText) {
+      const rows = parseCSV(csvText);
+      if (!rows.length) return [];
+      const headers = rows[0].map(h => String(h || "").trim());
+      return rows.slice(1)
+        .filter(cols => cols && cols.some(v => String(v || "").trim() !== ""))
+        .map(cols => {
+          const obj = {};
+          headers.forEach((h, idx2) => {
+            obj[h] = String(cols[idx2] ?? "").trim();
+          });
+          return obj;
+        });
+    }
+
+    function parseSeconds(value, fallback = 0) {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : fallback;
+    }
+
+    function buildBgmConfigFromCsv(tracksCsv, anchorsCsv, transitionsCsv) {
+      const tracks = {};
+
+      rowsToObjects(tracksCsv).forEach(row => {
+        const key = getField(row, ["track", "key", "id"]);
+        const url = getField(row, ["url", "path", "file"]);
+        if (!key || !url) return;
+        tracks[key] = { url, anchors: {} };
+      });
+
+      rowsToObjects(anchorsCsv).forEach(row => {
+        const trackKey = getField(row, ["track", "trackKey", "key"]);
+        const anchor = getField(row, ["anchor", "anchorName", "name"]);
+        if (!tracks[trackKey] || !anchor) return;
+        tracks[trackKey].anchors[anchor] = {
+          at: parseSeconds(getField(row, ["time_sec", "time", "sec", "seconds"])),
+          type: getField(row, ["type", "section", "kind"], "default")
+        };
+      });
+
+      const transitions = {};
+      rowsToObjects(transitionsCsv).forEach(row => {
+        const fromTrack = getField(row, ["from_track", "fromTrack", "from"]);
+        const toTrack = getField(row, ["to_track", "toTrack", "to"]);
+        const target = getField(row, ["target_anchor", "targetAnchor", "target"]);
+        if (!fromTrack || !toTrack || !target) return;
+
+        const ruleKey = `${fromTrack}->${toTrack}`;
+        const fromAnchor = getField(row, ["from_anchor", "fromAnchor", "anchor"]);
+        const fromType = getField(row, ["from_type", "fromType", "type"], "default");
+        const bucket = fromAnchor || fromType || "default";
+
+        transitions[ruleKey] ||= {};
+        transitions[ruleKey][bucket] ||= [];
+        transitions[ruleKey][bucket].push({
+          target,
+          silenceMs: parseSeconds(getField(row, ["silence_ms", "silenceMs"], "0")),
+          weight: Math.max(1, Math.round(parseSeconds(getField(row, ["weight"], "1"), 1)))
+        });
+      });
+
+      BGM.tracks = tracks;
+      BGM.transitions = transitions;
+    }
+
     async function loadConfigs() {
       els.progress.textContent = "正在读取配置...";
-      const [storyConfig, typesCsvText] = await Promise.all([
+      const [storyConfig, typesCsvText, bgmTracksCsv, bgmAnchorsCsv, bgmTransitionsCsv] = await Promise.all([
         fetchFirstAvailable(CONFIG_URLS.storyCandidates, false),
-        fetchFirstAvailable(CONFIG_URLS.typesCsvCandidates, true)
+        fetchFirstAvailable(CONFIG_URLS.typesCsvCandidates, true),
+        fetchFirstAvailable(CONFIG_URLS.bgmTracksCsvCandidates, true),
+        fetchFirstAvailable(CONFIG_URLS.bgmAnchorsCsvCandidates, true),
+        fetchFirstAvailable(CONFIG_URLS.bgmTransitionsCsvCandidates, true)
       ]);
 
       cards = Array.isArray(storyConfig.cards) ? storyConfig.cards : [];
       typeConfigs = buildTypeConfigMapFromCsv(typesCsvText);
+      buildBgmConfigFromCsv(bgmTracksCsv, bgmAnchorsCsv, bgmTransitionsCsv);
       cardIndexById = Object.fromEntries(cards.map((card, index) => [String(card.id), index]));
 
       if (!cards.length) {
@@ -1635,6 +1629,9 @@
       }
       if (!Object.keys(typeConfigs).length) {
         throw new Error("CSV 解析完成，但没有得到人格类型。请检查 CSV 表头是否包含 code/type 等字段。");
+      }
+      if (!Object.keys(BGM.tracks).length) {
+        throw new Error("BGM CSV 解析完成，但没有得到音乐轨道。请检查 bgm_tracks.csv。");
       }
     }
 
@@ -1652,6 +1649,9 @@
         "请确认以下文件可访问：",
         ...CONFIG_URLS.storyCandidates.map(p => `剧情：${p}`),
         ...CONFIG_URLS.typesCsvCandidates.map(p => `人格CSV：${p}`),
+        ...CONFIG_URLS.bgmTracksCsvCandidates.map(p => `BGM轨道CSV：${p}`),
+        ...CONFIG_URLS.bgmAnchorsCsvCandidates.map(p => `BGM锚点CSV：${p}`),
+        ...CONFIG_URLS.bgmTransitionsCsvCandidates.map(p => `BGM转场CSV：${p}`),
         "",
         "错误信息：",
         error.message
