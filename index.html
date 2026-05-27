@@ -3,1946 +3,645 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>死神值班：电车裁决</title>
+  <title>死神值班</title>
   <style>
+    @font-face {
+      font-family: "GameFont";
+      src: url("./assets/fonts/_思源柔黑体.ttf") format("truetype");
+      font-display: swap;
+    }
+
     :root {
-      --bg: #0b0d10;
-      --panel: #1b1f2a;
-      --text: #edf5ef;
-      --muted: #a8b6b6;
-      --left: #38598c;
-      --right: #8a2e24;
-      --accent: #b8ebe0;
-      --border: #2a3040;
-      --paper: #d8d0b7;
-      --paper-ink: #2a261f;
-      --paper-border: #4b4335;
-      --gold: #e7b84a;
+      --stage-w: min(100vw, calc(100vh * 16 / 9));
+      --stage-h: min(100vh, calc(100vw * 9 / 16));
+
+      --panel-w: min(34%, 430px);
+      --bar-h: 84px;
+
+      --panel-top-bottom: #dfe4e5;
+      --panel-mid: #f5f3ef;
+      --ink: #232323;
+
+      --bg-image: url("./assets/scene/scene_01.png");
+      --icon-ink: #0d4e4d;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+      font-family: "GameFont", sans-serif !important;
+      font-weight: 400 !important;
+    }
 
-    body {
+    html, body {
       margin: 0;
-      min-height: 100vh;
-      background: #08090b;
-      color: var(--text);
-      font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 16px;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #101114;
     }
 
-    .app {
-      width: min(860px, 100%);
+    .menu, .game {
+      position: fixed;
+      inset: 0;
       display: grid;
-      gap: 16px;
-      grid-template-columns: 1fr;
+      place-items: center;
     }
 
     .menu {
-      min-height: 520px;
-      border: 1px solid var(--border);
-      border-radius: 16px;
+      z-index: 30;
       background:
-        linear-gradient(170deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)),
-        radial-gradient(circle at 50% 10%, rgba(213, 183, 110, 0.12), transparent 52%),
-        #11151a;
-      display: grid;
-      align-content: center;
-      justify-items: center;
-      gap: 18px;
-      padding: 36px;
+        linear-gradient(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.28)),
+        var(--bg-image) center/cover no-repeat;
+    }
+
+    .menu[hidden], .game[hidden] { display: none; }
+
+    .menu-card {
+      width: min(520px, 90vw);
+      padding: 24px;
+      border-radius: 14px;
       text-align: center;
-    }
-
-    .menu h1 {
-      margin: 0;
-      font-size: clamp(30px, 6vw, 56px);
-      line-height: 1.1;
-    }
-
-    .menu p {
-      margin: 0;
-      max-width: 560px;
-      color: var(--muted);
-      line-height: 1.7;
-      white-space: pre-line;
-    }
-
-    .start-button {
-      min-width: 180px;
-      padding: 14px 20px;
-      border-color: rgba(255, 212, 59, 0.45);
-      background: #1e2430;
-      font-size: 18px;
-    }
-
-    .game-shell {
-      position: fixed;
-      inset: 0;
-      display: block;
-      overflow: hidden;
-      background: #08090b;
-    }
-
-    .menu[hidden],
-    .game-shell[hidden] {
-      display: none;
-    }
-
-    .world-canvas,
-    .veil {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-    }
-
-    .world-canvas {
-      z-index: 0;
-    }
-
-    .veil {
-      z-index: 1;
-      background:
-        linear-gradient(rgba(28, 32, 32, 0.24), rgba(23, 23, 21, 0.32)),
-        repeating-linear-gradient(45deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 6px);
-      pointer-events: none;
-    }
-
-    .topbar {
-      position: absolute;
-      z-index: 4;
-      top: 26px;
-      left: 56px;
-      right: 160px;
-      display: grid;
-      gap: 10px;
-      color: var(--muted);
-      font-size: 14px;
-      pointer-events: none;
-    }
-
-    .hud-header {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      align-items: end;
-      gap: 18px;
-    }
-
-    .progress-label {
-      color: #e4ddc9;
-      font-size: 28px;
-      line-height: 1.1;
-      font-weight: 700;
-    }
-
-    .omen-label {
-      color: #c3baa2;
-      font-size: 18px;
-      text-align: right;
-    }
-
-    .stat-row {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      opacity: 0;
-      transition: opacity 900ms ease;
-    }
-
-    .stat-row.stats-visible {
-      opacity: 1;
-    }
-
-    .stat-card {
-      min-width: 0;
-      display: grid;
-      grid-template-columns: 30px 7px;
-      align-items: center;
-      gap: 7px;
-      border: 0;
-      border-radius: 0;
-      background: transparent;
-      padding: 0;
-    }
-
-    .stat-icon {
-      position: relative;
-      display: block;
-      width: 30px;
-      height: 30px;
-      color: var(--gold);
-      opacity: 0.92;
-    }
-
-    .stat-icon::before,
-    .stat-icon::after {
-      content: "";
-      position: absolute;
-      box-sizing: border-box;
-    }
-
-    .icon-order::before {
-      left: 7px;
-      top: 5px;
-      width: 16px;
-      height: 18px;
-      border: 3px solid currentColor;
-      border-top-width: 5px;
-      transform: skewX(-8deg);
-    }
-
-    .icon-order::after {
-      left: 4px;
-      top: 23px;
-      width: 22px;
-      height: 3px;
-      background: currentColor;
-    }
-
-    .icon-fear::before {
-      left: 3px;
-      top: 8px;
-      width: 24px;
-      height: 15px;
-      border: 3px solid currentColor;
-      border-radius: 50% / 58%;
-    }
-
-    .icon-fear::after {
-      left: 12px;
-      top: 12px;
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: currentColor;
-    }
-
-    .icon-mercy::before {
-      left: 8px;
-      top: 11px;
-      width: 14px;
-      height: 14px;
-      background: currentColor;
-      transform: rotate(45deg);
-    }
-
-    .icon-mercy::after {
-      left: 5px;
-      top: 5px;
-      width: 20px;
-      height: 14px;
-      background:
-        radial-gradient(circle at 30% 50%, currentColor 0 7px, transparent 7px),
-        radial-gradient(circle at 70% 50%, currentColor 0 7px, transparent 7px);
-    }
-
-    .icon-coin::before {
-      left: 5px;
-      top: 5px;
-      width: 20px;
-      height: 20px;
-      border: 3px solid currentColor;
-      border-radius: 50%;
-      background: rgba(231, 184, 74, 0.16);
-    }
-
-    .icon-coin::after {
-      left: 14px;
-      top: 9px;
-      width: 3px;
-      height: 12px;
-      background: currentColor;
-    }
-
-    .stat-track {
-      position: relative;
-      width: 7px;
-      height: 30px;
-      overflow: hidden;
-      border-radius: 0;
-      background: rgba(14, 15, 16, 0.68);
-      border: 1px solid rgba(216, 208, 183, 0.28);
-    }
-
-    .stat-fill {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      display: block;
-      height: 50%;
-      width: 100%;
-      background: var(--gold);
-      transition: height 180ms ease;
-    }
-
-    .audio-toggle {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      z-index: 20;
-      width: 92px;
-      padding: 10px 12px;
-      border-radius: 999px;
-      font-size: 13px;
-      color: var(--text);
-      background: rgba(22, 27, 37, 0.92);
-      backdrop-filter: blur(10px);
-    }
-
-    .audio-toggle[aria-pressed="false"] {
-      color: var(--muted);
-    }
-
-    .board {
-      position: absolute;
-      z-index: 3;
-      inset: 0;
-      overflow: visible;
-      border: 0;
-      background: transparent;
-      pointer-events: none;
-    }
-
-    .card {
-      position: absolute;
-      left: 50%;
-      top: max(150px, calc(50% - 250px));
-      width: min(520px, calc(100vw - 36px));
-      height: min(560px, calc(100vh - 188px));
-      border-radius: 2px;
-      border: 2px solid var(--paper-border);
-      background: var(--paper);
-      padding: 20px 26px 22px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      cursor: grab;
-      user-select: none;
-      transform: translateX(-50%);
-      transform-origin: 50% 50%;
-      transition: transform 180ms ease, opacity 180ms ease;
-      touch-action: none;
-      pointer-events: auto;
-      box-shadow: 0 10px 0 rgba(0, 0, 0, 0.16);
-    }
-
-    .card::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      background:
-        repeating-linear-gradient(35deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 7px),
-        repeating-linear-gradient(125deg, rgba(0,0,0,0.018) 0 1px, transparent 1px 9px);
-      mix-blend-mode: multiply;
-    }
-
-    .card h2 {
-      margin: 0;
-      color: #201d18;
-      font-size: 28px;
-      line-height: 1.35;
-      text-align: center;
-      font-weight: 700;
-    }
-
-    .card p {
-      margin: 0;
-      color: var(--paper-ink);
-      line-height: 1.58;
-      font-size: 20px;
-      white-space: pre-line;
-      flex: 1;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-    }
-
-    .card-tag {
-      display: none;
-      color: #6b5b45;
-      font-size: 12px;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    .card-illustration {
-      width: 100%;
-      height: 240px;
-      flex: 0 0 240px;
-      display: block;
-      image-rendering: auto;
-    }
-
-    .choice-hint {
-      position: absolute;
-      z-index: 2;
-      left: 0;
-      right: 0;
-      top: max(358px, calc(50% + 26px));
-      height: 132px;
-      pointer-events: none;
-      font-size: 17px;
+      background: rgba(10, 18, 20, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.2);
       color: #fff;
     }
 
-    .choice-hint span {
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 24px;
+      font-size: 20px;
+      cursor: pointer;
+      background: #f2e8d6;
+      color: #1f1f1f;
+    }
+
+    /* 固定 16:9 画布 */
+    .stage {
+      position: relative;
+      width: var(--stage-w);
+      height: var(--stage-h);
+      overflow: hidden;
+      background:
+        linear-gradient(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.28)),
+        var(--bg-image) center/cover no-repeat;
+    }
+
+    .choice-bars {
       position: absolute;
-      top: 0;
-      width: clamp(136px, 15vw, 184px);
-      min-height: 132px;
-      border-radius: 2px;
-      display: grid;
-      place-items: center;
-      padding: 8px;
-      text-align: center;
-      white-space: pre-line;
-      transition: opacity 120ms ease, transform 120ms ease;
-      border: 2px solid rgba(42, 38, 31, 0.22);
-      opacity: 0.42;
-    }
-
-    #leftChoice {
-      left: max(18px, calc(50% - 436px));
-      background: #3e617d;
-    }
-
-    #rightChoice {
-      right: max(18px, calc(50% - 436px));
-      background: #9c4436;
-    }
-
-    .left-flag, .right-flag {
-      display: none;
-    }
-
-    .card-hint {
-      color: #8b806a;
-      font-size: 16px;
-      text-align: center;
-    }
-
-    .hint-left { color: #3e617d; font-weight: 700; }
-    .hint-right { color: #9c4436; font-weight: 700; }
-
-    .outcome {
-      position: absolute;
-      z-index: 4;
-      left: 80px;
-      right: 80px;
-      bottom: 22px;
-      min-height: 54px;
-      color: #d8d0b7;
-      font-size: 18px;
-      line-height: 1.5;
-      text-align: center;
+      inset: 0;
+      z-index: 70;
       pointer-events: none;
     }
 
-    .controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    button {
-      border: 1px solid var(--border);
-      background: #242622;
-      color: var(--text);
-      border-radius: 2px;
-      padding: 12px;
-      font-size: 15px;
-      cursor: pointer;
-    }
-
-    button:hover { filter: brightness(1.06); }
-
-    .axis {
-      display: none;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px;
-      background: rgba(0,0,0,0.15);
-      gap: 10px;
-    }
-
-    .axis-row {
-      display: grid;
-      grid-template-columns: 122px 1fr 122px;
+    .side-choice {
+      position: absolute;
+      top: 56%;
+      height: 72px;
+      display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 13px;
+      background: rgba(255, 255, 255, 0.85);
+      color: #222;
+      border-radius: 999px;
+      opacity: 0.5;
+      transition: opacity .08s linear, transform .08s linear;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      font-size: clamp(17px, 1.25vw, 24px);
     }
 
-    .bar {
-      position: relative;
-      height: 8px;
-      border-radius: 999px;
-      background: #111621;
+    .side-left {
+      right: calc(50% + var(--panel-w) / 2 - 8px);
+      width: min(44vw, 760px);
+      justify-content: flex-end;
+      padding: 0 24px;
+      transform: translateY(-50%);
+    }
+
+    .side-right {
+      left: calc(50% + var(--panel-w) / 2 - 8px);
+      width: min(44vw, 760px);
+      justify-content: flex-start;
+      padding: 0 24px;
+      transform: translateY(-50%);
+    }
+
+    .panel {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+      width: var(--panel-w);
+      height: 100%;
+      display: grid;
+      grid-template-rows: var(--bar-h) 1fr var(--bar-h);
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    .top-bar,
+    .bottom-bar {
+      background: var(--panel-top-bottom);
+      display: grid;
+      align-items: center;
+      min-height: var(--bar-h);
+      max-height: var(--bar-h);
+      padding: 0 14px;
+      color: #222;
+    }
+
+    .top-bar { border-bottom: 1px solid #c6ccd2; }
+    .bottom-bar {
+      border-top: 1px solid #c6ccd2;
+      place-items: center;
+      text-align: center;
+      font-size: clamp(16px, 1.1vw, 22px);
+      white-space: nowrap;
+      text-overflow: ellipsis;
       overflow: hidden;
     }
 
-    .bar-fill {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      left: 50%;
-      width: 0;
-      transform: translateX(-50%);
-      background: linear-gradient(90deg, #74c0fc, #ff8787);
-      transition: width 200ms ease;
+    .top-icons {
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      align-items: center;
+      justify-items: center;
+      gap: 0;
     }
 
-    .result {
-      border: 1px solid var(--border);
-      border-radius: 2px;
-      background:
-        repeating-linear-gradient(35deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 7px),
-        #22251f;
-      padding: 18px;
-      display: none;
-      gap: 10px;
+    .meter-icon {
       position: relative;
-      z-index: 8;
+      width: 54px;
+      height: 54px;
+      --fill: 50%;
+      --empty: calc(100% - var(--fill));
     }
 
-    .result.show { display: grid; }
-
-    .result h3 {
-      margin: 0;
-      font-size: 26px;
+    .meter-icon::before,
+    .meter-icon::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      pointer-events: none;
+      -webkit-mask-image: var(--icon-mask);
+      mask-image: var(--icon-mask);
+      -webkit-mask-size: contain;
+      mask-size: contain;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+      mask-position: center;
     }
 
-    #typeCode,
-    #typeDesc {
+    .meter-icon::before {
+      bottom: 0;
+      height: var(--fill);
+      background: var(--icon-ink);
+    }
+
+    .meter-icon::after {
+      top: 0;
+      height: var(--empty);
+      background: #fff;
+    }
+
+    .board {
+      background: var(--panel-mid);
+      padding: 12px 12px 10px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 10px;
+      pointer-events: none; /* 整块固定 */
+    }
+
+    .story-text {
+      color: var(--ink);
+      text-align: center;
+      line-height: 1.6;
       white-space: pre-line;
+      font-size: clamp(16px, 1.05vw, 22px);
+      min-height: 92px;
+      display: grid;
+      place-items: center;
+      padding: 4px 4px;
     }
 
-    .share {
-      border: 1px solid var(--border);
-      background: #171914;
-      border-radius: 2px;
-      padding: 10px;
-      color: #d9deea;
-      white-space: pre-line;
+    /* 只有这块可拖动 */
+    .visual-wrap {
+      pointer-events: auto;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 8px;
+      border: 1px solid rgba(0,0,0,.15);
+      overflow: hidden;
+      background: #fff;
+      touch-action: none;
+      user-select: none;
+      transition: transform .16s ease, opacity .16s ease;
+      transform: translateX(0) rotate(0deg);
+    }
+
+    #cardImage {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      pointer-events: none;
+    }
+
+    .hint {
+      color: #555;
+      text-align: center;
       font-size: 14px;
     }
 
-    .muted { color: var(--muted); }
+    .result {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      z-index: 100;
+      background: rgba(0,0,0,.52);
+      backdrop-filter: blur(4px);
+    }
+    .result.show { display: grid; }
 
-    @media (max-width: 700px) {
-      body { padding: 10px; }
-      .audio-toggle {
-        top: auto;
-        right: 12px;
-        bottom: 12px;
-      }
-      .topbar {
-        top: 18px;
-        left: 18px;
-        right: 18px;
-      }
-      .hud-header {
-        grid-template-columns: 1fr;
-        gap: 4px;
-      }
-      .progress-label { font-size: 22px; }
-      .omen-label {
-        font-size: 14px;
-        text-align: left;
-      }
-      .stat-row {
-        gap: 14px;
-      }
-      .stat-card {
-        grid-template-columns: 26px 6px;
-        gap: 6px;
-      }
-      .stat-icon { width: 26px; height: 26px; transform: scale(.9); }
-      .stat-track { width: 6px; height: 26px; }
-      .card {
-        top: max(198px, calc(50% - 214px));
-        height: min(520px, calc(100vh - 220px));
-        padding: 18px 18px;
-        gap: 10px;
-      }
-      .card-illustration {
-        height: 188px;
-        flex-basis: 188px;
-      }
-      .axis-row { grid-template-columns: 92px 1fr 92px; font-size: 12px; }
-      .card h2 { font-size: 25px; }
-      .card p { font-size: 18px; }
-      .choice-hint { font-size: 16px; gap: 10px; }
-      .choice-hint {
-        top: max(430px, calc(50% + 26px));
-        height: 104px;
-      }
-      .choice-hint span {
-        width: 72px;
-        min-height: 104px;
-        padding: 7px 5px;
-        font-size: 13px;
-      }
-      #leftChoice { left: 22px; }
-      #rightChoice { right: 22px; }
-      .card-hint { font-size: 14px; }
-      .outcome {
-        left: 22px;
-        right: 22px;
-        bottom: 14px;
-        font-size: 15px;
-      }
+    .result-card {
+      width: min(620px, 92vw);
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.2);
+      padding: 22px;
+      text-align: center;
+      background: rgba(12,20,24,.94);
+      color: #fff;
+    }
+
+    .result-icon {
+      width: 128px;
+      height: 128px;
+      object-fit: contain;
+      margin: 0 auto 10px;
+      display: block;
+    }
+
+    .type-code {
+      font-size: clamp(50px, 6vw, 76px);
+      line-height: 1;
+      margin: 6px 0 12px;
     }
   </style>
 </head>
 <body>
-  <button class="audio-toggle" id="musicToggle" aria-pressed="true">音乐 ON</button>
-  <main class="app">
-    <section class="menu" id="mainMenu">
-      <div class="muted">Death Shift Personality Test</div>
+  <section class="menu" id="menu">
+    <div class="menu-card">
       <h1>死神值班</h1>
-      <p>在人类生死之间刷卡。
-每一次选择，都会被记录。</p>
-      <button class="start-button" id="startBtn">开始游戏</button>
-    </section>
+      <p>左右拖动中间图片进行裁决</p>
+      <button id="startBtn">开始</button>
+    </div>
+  </section>
 
-    <section class="game-shell" id="gameShell" hidden>
-      <canvas class="world-canvas" id="worldCanvas" aria-hidden="true"></canvas>
-      <div class="veil" aria-hidden="true"></div>
-
-      <div class="topbar">
-        <div class="hud-header">
-          <div class="progress-label" id="progress">第 1 夜</div>
-          <div class="omen-label" id="omen">亡者排队，生者等候</div>
-        </div>
-        <div class="stat-row" id="godotStats">
-          <div class="stat-card" data-stat="秩序" title="秩序"><span class="stat-icon icon-order" aria-hidden="true"></span><div class="stat-track"><span class="stat-fill"></span></div></div>
-          <div class="stat-card" data-stat="恐惧" title="恐惧"><span class="stat-icon icon-fear" aria-hidden="true"></span><div class="stat-track"><span class="stat-fill"></span></div></div>
-          <div class="stat-card" data-stat="怜悯" title="怜悯"><span class="stat-icon icon-mercy" aria-hidden="true"></span><div class="stat-track"><span class="stat-fill"></span></div></div>
-          <div class="stat-card" data-stat="冥币" title="冥币"><span class="stat-icon icon-coin" aria-hidden="true"></span><div class="stat-track"><span class="stat-fill"></span></div></div>
-        </div>
+  <main class="game" id="game" hidden>
+    <div class="stage">
+      <div class="choice-bars">
+        <div class="side-choice side-left" id="leftChoice"></div>
+        <div class="side-choice side-right" id="rightChoice"></div>
       </div>
 
-      <section class="board" id="board">
-        <div class="choice-hint">
-          <span id="leftChoice"></span>
-          <span id="rightChoice"></span>
-        </div>
-        <article class="card" id="card">
-          <div class="left-flag" id="leftFlag"></div>
-          <div class="right-flag" id="rightFlag"></div>
-          <canvas class="card-illustration" id="cardIllustration" aria-hidden="true"></canvas>
-          <div class="card-tag" id="tag"></div>
-          <h2 id="title"></h2>
-          <p id="body"></p>
-          <div class="card-hint" id="cardHint">拖动卡片：<span class="hint-left">左滑</span> 或 <span class="hint-right">右滑</span> 作出判决</div>
-        </article>
-      </section>
+      <div class="panel">
+        <header class="top-bar">
+          <div class="top-icons" id="topIcons"></div>
+        </header>
 
-      <div class="outcome" id="outcome"></div>
+        <section class="board">
+          <div class="story-text" id="body"></div>
+          <div class="visual-wrap" id="visualDrag">
+            <img id="cardImage" src="./assets/card/card_1.png" alt="card" />
+          </div>
+          <div class="hint">向左 / 向右拖动图片选择</div>
+        </section>
 
-      <div class="controls" id="gameControls">
-        <button id="btnLeft"></button>
-        <button id="btnRight"></button>
+        <footer class="bottom-bar" id="lastChoice">等待你的第一次选择</footer>
       </div>
-
-      <section class="axis" id="axisBoard"></section>
-    </section>
-
-    <section class="result" id="result">
-      <div class="muted">人格结算</div>
-      <h3 id="typeName"></h3>
-      <div id="typeCode"></div>
-      <p id="typeDesc"></p>
-      <div class="share" id="shareText"></div>
-      <div class="controls">
-        <button id="copyBtn">复制分享文案</button>
-        <button id="restartBtn">再值一次班</button>
-      </div>
-    </section>
+    </div>
   </main>
 
+  <section class="result" id="result">
+    <div class="result-card">
+      <img class="result-icon" id="resultIcon" src="./assets/icon_type/icon_type_QSNR.png" alt="result" />
+      <div class="type-code" id="resultCode">----</div>
+      <div id="typeNameCn">未命名类型</div>
+      <div id="typeSlogan"></div>
+      <div id="typeSubline"></div>
+      <div id="typeQuickread"></div>
+      <button id="restartBtn">再来一次</button>
+    </div>
+  </section>
+
   <script>
-    const CONFIG_URLS = {
-      storyCandidates: [
-        "submissions/shinigami/config/shinigami_story_config.json",
-        "shinigami_story_config.json"
-      ],
-      typesCsvCandidates: [
-        "submissions/shinigami/config/shinigami_16types_config.csv",
-        "shinigami_16types_config.csv"
-      ]
+    const CONFIG_URLS = [
+      "submissions/shinigami/config/shinigami_story_config.json",
+      "shinigami_story_config.json"
+    ];
+    const TYPE_CONFIG_URLS = [
+      "submissions/shinigami/config/shinigami_16types_config.csv",
+      "submissions/shinigami/config/shinigami_16types_config",
+      "shinigami_16types_config.csv"
+    ];
+
+    const AXIS_KEYS = ["QI", "SP", "FN", "RB"];
+    const AXES = {
+      QI: { score: 0 }, SP: { score: 0 }, FN: { score: 0 }, RB: { score: 0 }
     };
 
-    const SFX = {
-      cardMotion: [
-        {
-          url: "submissions/austin/audio-placeholder-v01/assets/audio/sfx/u_nharq4usid-swipe-255512.mp3",
-          gain: 1.0
-        },
-        {
-          url: "submissions/austin/audio-placeholder-v01/assets/audio/sfx/universfield-swoosh-026-454861.mp3",
-          gain: 0.28
-        }
-      ],
-      volume: 0.42,
-      pitchJitter: 0.2
-    };
-
-    const BGM = {
-      tracks: {
-        menu: {
-          url: "submissions/austin/audio-placeholder-v01/assets/audio/music/00.mp3",
-          anchors: {
-            start1: { at: 0, type: "intro" },
-            loop1: { at: 0, type: "intro" }
-          }
-        },
-        first: {
-          url: "submissions/austin/audio-placeholder-v01/assets/audio/music/01.mp3",
-          anchors: {
-            intro1: { at: 0, type: "intro" },
-            intro2: { at: 22, type: "intro" },
-            chorus1: { at: 45, type: "chorus" },
-            bridge1: { at: 67, type: "bridge" },
-            intro3: { at: 73, type: "intro" },
-            intro4: { at: 91, type: "intro" },
-            chorus2: { at: 101, type: "chorus" },
-            chorus3: { at: 113, type: "chorus" },
-            bridge2: { at: 124, type: "bridge" },
-            bridge3: { at: 135, type: "bridge" },
-            intro5: { at: 147, type: "intro" },
-            intro6: { at: 158, type: "intro" },
-            intro7: { at: 170, type: "intro" },
-            chorus4: { at: 180, type: "chorus" },
-            chorus5: { at: 192, type: "chorus" },
-            outro1: { at: 204, type: "outro" }
-          }
-        },
-        oneThird: {
-          url: "submissions/austin/audio-placeholder-v01/assets/audio/music/Dodo%20CyberHype.mp3",
-          anchors: {
-            intro1: { at: 0, type: "intro" },
-            intro2: { at: 22, type: "intro" },
-            chorus1: { at: 45, type: "chorus" },
-            bridge1: { at: 67, type: "bridge" },
-            intro3: { at: 73, type: "intro" },
-            intro4: { at: 91, type: "intro" },
-            chorus2: { at: 101, type: "chorus" },
-            chorus3: { at: 113, type: "chorus" },
-            bridge2: { at: 124, type: "bridge" },
-            bridge3: { at: 135, type: "bridge" },
-            intro5: { at: 147, type: "intro" },
-            intro6: { at: 158, type: "intro" },
-            intro7: { at: 170, type: "intro" },
-            chorus4: { at: 180, type: "chorus" },
-            chorus5: { at: 192, type: "chorus" },
-            outro1: { at: 204, type: "outro" }
-          }
-        },
-        twoThirds: {
-          url: "submissions/austin/audio-placeholder-v01/assets/audio/music/Judgment%20Ward01.mp3",
-          anchors: {
-            intro1: { at: 0, type: "intro" },
-            chorus1: { at: 45, type: "chorus" },
-            bridge1: { at: 75, type: "bridge" }
-          }
-        }
-      },
-      transitions: {
-        "menu->first": {
-          intro: [{ target: "intro1" }]
-        },
-        "first->oneThird": {
-          intro1: [{ target: "chorus1" }],
-          intro2: [{ target: "chorus1" }],
-          chorus1: [{ target: "bridge1" }],
-          bridge1: [{ target: "intro3" }],
-          intro3: [{ target: "chorus2" }],
-          intro4: [{ target: "chorus2" }],
-          chorus2: [{ target: "bridge2" }],
-          chorus3: [{ target: "bridge2" }],
-          bridge2: [{ target: "bridge3" }],
-          bridge3: [{ target: "intro5" }],
-          intro5: [{ target: "chorus4" }],
-          intro6: [{ target: "chorus4" }],
-          chorus4: [{ target: "bridge1" }],
-          chorus5: [{ target: "bridge1" }],
-          outro1: [{ target: "intro1" }],
-          default: [{ target: "intro1" }]
-        },
-        "oneThird->twoThirds": {
-          intro: [{ target: "intro1" }],
-          chorus: [{ target: "intro1" }],
-          bridge: [{ target: "intro1" }],
-          outro: [{ target: "intro1" }],
-          default: [{ target: "intro1" }]
-        }
-      },
-      volume: 0.17,
-      fadeMs: 1800,
-      preFadeMs: 2000,
-      anchorWaitMaxMs: 30000
-    };
-
-    const axes = {
-      QI: { left: "Q 数量主义", right: "I 个体主义", score: 0 },
-      SP: { left: "S 自我圈层", right: "P 公共中立", score: 0 },
-      FN: { left: "F 长期结果", right: "N 当下止损", score: 0 },
-      RB: { left: "R 规则服从", right: "B 规则突破", score: 0 }
-    };
+    const SWIPE_THRESHOLD = 140;
+    const IMG_EXTS = [".png", ".jpg", ".jpeg", ".webp"];
+    const ICON_BASES = ["./assets/4icon/icon_1","./assets/4icon/icon_2","./assets/4icon/icon_3","./assets/4icon/icon_4"];
+    const CARD_IMAGE_BASE = "./assets/card/card_1";
+    const RESULT_ICON_BASE = "./assets/icon_type/icon_type_";
+    const SCENE_BASE_BY_RANGE = { s1:"./assets/scene/scene_01", s2:"./assets/scene/scene_02", s3:"./assets/scene/scene_03", s4:"./assets/scene/scene_04" };
 
     const els = {
-      mainMenu: document.getElementById("mainMenu"),
-      gameShell: document.getElementById("gameShell"),
+      menu: document.getElementById("menu"),
       startBtn: document.getElementById("startBtn"),
-      musicToggle: document.getElementById("musicToggle"),
-      card: document.getElementById("card"),
-      tag: document.getElementById("tag"),
-      title: document.getElementById("title"),
+      game: document.getElementById("game"),
+      topIcons: document.getElementById("topIcons"),
+      visualDrag: document.getElementById("visualDrag"),
       body: document.getElementById("body"),
+      cardImage: document.getElementById("cardImage"),
       leftChoice: document.getElementById("leftChoice"),
       rightChoice: document.getElementById("rightChoice"),
-      btnLeft: document.getElementById("btnLeft"),
-      btnRight: document.getElementById("btnRight"),
-      progress: document.getElementById("progress"),
-      omen: document.getElementById("omen"),
-      godotStats: document.getElementById("godotStats"),
-      worldCanvas: document.getElementById("worldCanvas"),
-      cardIllustration: document.getElementById("cardIllustration"),
-      cardHint: document.getElementById("cardHint"),
-      outcome: document.getElementById("outcome"),
-      leftFlag: document.getElementById("leftFlag"),
-      rightFlag: document.getElementById("rightFlag"),
-      axisBoard: document.getElementById("axisBoard"),
+      lastChoice: document.getElementById("lastChoice"),
       result: document.getElementById("result"),
-      typeName: document.getElementById("typeName"),
-      typeCode: document.getElementById("typeCode"),
-      typeDesc: document.getElementById("typeDesc"),
-      shareText: document.getElementById("shareText"),
-      copyBtn: document.getElementById("copyBtn"),
-      restartBtn: document.getElementById("restartBtn"),
-      gameControls: document.getElementById("gameControls")
+      resultIcon: document.getElementById("resultIcon"),
+      resultCode: document.getElementById("resultCode"),
+      typeNameCn: document.getElementById("typeNameCn"),
+      typeSlogan: document.getElementById("typeSlogan"),
+      typeSubline: document.getElementById("typeSubline"),
+      typeQuickread: document.getElementById("typeQuickread"),
+      restartBtn: document.getElementById("restartBtn")
     };
 
     let cards = [];
-    let cardIndexById = {};
-    let typeConfigs = {};
+    let typeMap = {};
     let idx = 0;
     let dragging = false;
     let startX = 0;
-    let startY = 0;
     let offsetX = 0;
-    let offsetY = 0;
-    let sfxUnlocked = false;
-    let gameStarted = false;
-    let currentBgm = null;
-    let currentBgmKey = "";
-    let pendingBgmKey = "";
-    let musicEnabled = true;
-    let currentVisual = null;
-    let currentDragBias = 0;
-    let lastOutcome = "";
-    const GODOT_CARD_VISUALS = [
-      { scene: "court", person: "reaper", accent: [184, 235, 224], sky: [31, 38, 46], ground: [51, 46, 36] },
-      { scene: "field", person: "noble", accent: [235, 184, 61], sky: [33, 33, 28], ground: [71, 56, 26] },
-      { scene: "plague", person: "doctor", accent: [158, 219, 173], sky: [28, 43, 41], ground: [33, 41, 33] },
-      { scene: "mine", person: "miner", accent: [242, 173, 56], sky: [20, 23, 28], ground: [46, 41, 36] },
-      { scene: "palace", person: "queen", accent: [219, 179, 245], sky: [33, 26, 56], ground: [59, 43, 77] },
-      { scene: "war", person: "soldier", accent: [194, 20, 18], sky: [51, 41, 33], ground: [46, 41, 33] },
-      { scene: "market", person: "merchant", accent: [242, 189, 87], sky: [61, 38, 31], ground: [59, 33, 23] },
-      { scene: "grave", person: "bride", accent: [214, 235, 219], sky: [20, 36, 38], ground: [33, 43, 38] },
-      { scene: "boat", person: "orphan", accent: [133, 184, 235], sky: [15, 26, 43], ground: [15, 28, 43] },
-      { scene: "forge", person: "saint", accent: [153, 219, 242], sky: [38, 33, 38], ground: [46, 31, 26] },
-      { scene: "court", person: "warden", accent: [199, 184, 143], sky: [31, 31, 41], ground: [43, 38, 33] }
-    ];
-    const GODOT_STAT_BASE = { "秩序": 50, "恐惧": 36, "怜悯": 42, "冥币": 30 };
-    const sfxPool = SFX.cardMotion.map((sfx) => {
-      const audio = new Audio(sfx.url);
-      audio.preload = "auto";
-      audio.volume = clamp(SFX.volume * (sfx.gain || 1), 0, 1);
-      return { audio, gain: sfx.gain || 1 };
-    });
-    const SWIPE_THRESHOLD = 170;
-    const TOTAL_DISPLAY_STEPS = 30;
-    const branchMergeRules = {
-      "10-L": { group: "10", counterpart: "10-R", target: "12" },
-      "10-R": { group: "10", counterpart: "10-L", target: "12" },
-      "18-L": { group: "18", counterpart: "18-R", target: "20" },
-      "18-R": { group: "18", counterpart: "18-L", target: "20" },
-      "26-L": { group: "26", counterpart: "26-R", target: "28" },
-      "26-R": { group: "26", counterpart: "26-L", target: "28" }
-    };
-    const collapsedDisplayRules = [
-      { ids: new Set(["14-L", "14-R"]), display: 14, reduceAfter: 15 },
-      { ids: new Set(["22-L", "22-R"]), display: 21, reduceAfter: 23 },
-      { ids: new Set(["30-L", "30-R"]), display: 28, reduceAfter: 31 }
-    ];
-    let branchVisitState = {};
 
-    function clamp(v, min, max) {
-      return Math.min(max, Math.max(min, v));
-    }
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+    const getTypeCode = () => (AXES.QI.score >= 0 ? "Q" : "I") + (AXES.SP.score >= 0 ? "S" : "P") + (AXES.FN.score >= 0 ? "F" : "N") + (AXES.RB.score >= 0 ? "R" : "B");
+    const axisFillPercent = (score) => clamp(50 + (clamp(score, -60, 60) / 60) * 50, 0, 100);
 
-    function rgba(color, alpha = 1) {
-      return `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`;
-    }
-
-    function mixColor(a, b, t) {
-      return [
-        Math.round(a[0] + (b[0] - a[0]) * t),
-        Math.round(a[1] + (b[1] - a[1]) * t),
-        Math.round(a[2] + (b[2] - a[2]) * t)
-      ];
-    }
-
-    function resizeCanvas(canvas) {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = Math.max(1, window.devicePixelRatio || 1);
-      const width = Math.max(1, Math.round(rect.width * dpr));
-      const height = Math.max(1, Math.round(rect.height * dpr));
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-      }
-      const ctx = canvas.getContext("2d");
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      return { ctx, w: rect.width, h: rect.height };
-    }
-
-    function polygon(ctx, points, fill) {
-      ctx.beginPath();
-      points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
-      ctx.closePath();
-      ctx.fillStyle = fill;
-      ctx.fill();
-    }
-
-    function strokeArc(ctx, x, y, radius, start, end, color, width) {
-      ctx.beginPath();
-      ctx.arc(x, y, radius, start, end);
-      ctx.strokeStyle = color;
-      ctx.lineWidth = width;
-      ctx.stroke();
-    }
-
-    function drawMoon(ctx, x, y, radius, color, sky) {
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(x, y, radius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = sky;
-      ctx.beginPath();
-      ctx.arc(x + radius * 0.35, y - radius * 0.14, radius * 0.88, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    function drawCity(ctx, w, h, base, light) {
-      for (let i = 0; i < 9; i += 1) {
-        const x = w * (i * 0.13 - 0.04);
-        const bw = w * 0.10;
-        const bh = h * (0.20 + 0.06 * (i % 4));
-        ctx.fillStyle = base;
-        ctx.fillRect(x, h * 0.58 - bh, bw, bh);
-        ctx.fillStyle = light;
-        ctx.fillRect(x + bw * 0.25, h * 0.49, bw * 0.12, h * 0.035);
-        ctx.fillRect(x + bw * 0.62, h * 0.42, bw * 0.12, h * 0.035);
-      }
-    }
-
-    function drawRain(ctx, w, h) {
-      ctx.strokeStyle = "rgba(218, 218, 207, .42)";
-      ctx.lineWidth = 4;
-      ctx.lineCap = "round";
-      for (let i = 0; i < 34; i += 1) {
-        const x = (i * 89) % (w + 120) - 60;
-        const y = (i * 47) % (h * 0.7);
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x - 24, y + 72);
-        ctx.stroke();
-      }
-      ctx.lineCap = "butt";
-    }
-
-    function drawLightning(ctx, w, h, x, scale = 1) {
-      polygon(ctx, [
-        [x, -20 * scale],
-        [x - 52 * scale, 150 * scale],
-        [x - 8 * scale, 136 * scale],
-        [x - 78 * scale, 330 * scale],
-        [x + 38 * scale, 112 * scale],
-        [x - 14 * scale, 126 * scale],
-        [x + 42 * scale, -24 * scale]
-      ], "rgba(231, 184, 74, .94)");
-    }
-
-    function drawFlatClouds(ctx, w, h) {
-      ctx.fillStyle = "rgba(55, 59, 58, .72)";
-      for (let row = 0; row < 2; row += 1) {
-        const y = h * (0.06 + row * 0.12);
-        for (let i = -1; i < 9; i += 1) {
-          ctx.beginPath();
-          ctx.arc(w * (i * 0.15 + 0.05), y, h * 0.075, Math.PI, 0);
-          ctx.arc(w * (i * 0.15 + 0.12), y + 8, h * 0.06, Math.PI, 0);
-          ctx.rect(w * (i * 0.15 - 0.02), y, w * 0.22, h * 0.08);
-          ctx.fill();
-        }
-      }
-    }
-
-    function renderGodotBackground(sceneVisual = currentVisual) {
-      if (!sceneVisual || !els.worldCanvas) return;
-      const { ctx, w, h } = resizeCanvas(els.worldCanvas);
-      const scene = sceneVisual.scene || "court";
-      const sky = sceneVisual.sky || [31, 38, 46];
-      const ground = sceneVisual.ground || [51, 46, 36];
-      ctx.clearRect(0, 0, w, h);
-      const flatSky = mixColor(sky, [116, 111, 101], 0.34);
-      const flatGround = mixColor(ground, [118, 106, 88], 0.28);
-      ctx.fillStyle = rgba(flatSky);
-      ctx.fillRect(0, 0, w, h);
-      ctx.fillStyle = rgba(flatGround);
-      ctx.fillRect(0, h * 0.56, w, h * 0.44);
-      drawFlatClouds(ctx, w, h);
-      drawLightning(ctx, w, h, w * 0.20, 0.95);
-      drawLightning(ctx, w, h, w * 0.64, 0.82);
-      drawRain(ctx, w, h);
-
-      if (scene === "field") {
-        drawMoon(ctx, w * 0.16, h * 0.18, 46, "rgba(240,209,122,.82)", rgba(sky));
-        for (let i = 0; i < 28; i += 1) {
-          const x = w * (i / 27);
-          ctx.strokeStyle = "rgba(179,138,51,.74)";
-          ctx.lineWidth = 4;
-          ctx.beginPath(); ctx.moveTo(x, h * 0.60); ctx.lineTo(x - 28, h); ctx.stroke();
-          ctx.strokeStyle = "rgba(235,189,77,.48)";
-          ctx.lineWidth = 3;
-          ctx.beginPath(); ctx.moveTo(x + 8, h * 0.62); ctx.lineTo(x + 34, h); ctx.stroke();
-        }
-      } else if (scene === "plague") {
-        drawCity(ctx, w, h, "rgba(18,26,26,.95)", "rgba(133,179,148,.34)");
-        for (let i = 0; i < 18; i += 1) {
-          ctx.fillStyle = "rgba(140,199,153,.20)";
-          ctx.beginPath();
-          ctx.arc(w * ((i * 0.17) % 1), h * (0.64 + ((i * 0.11) % 0.22)), 10, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      } else if (scene === "mine") {
-        for (let i = 0; i < 10; i += 1) {
-          const x = w * (i * 0.11 - 0.08);
-          polygon(ctx, [[x, h], [x + w * 0.13, h * (0.34 + 0.05 * (i % 3))], [x + w * 0.28, h]], "rgba(10,13,15,.92)");
-        }
-        ctx.strokeStyle = "rgba(173,133,71,.72)";
-        ctx.lineWidth = 8;
-        ctx.beginPath(); ctx.moveTo(w * 0.08, h * 0.66); ctx.lineTo(w * 0.92, h * 0.66); ctx.stroke();
-      } else if (scene === "palace") {
-        drawMoon(ctx, w * 0.84, h * 0.18, 40, "rgba(189,204,250,.86)", rgba(sky));
-        for (let i = 0; i < 5; i += 1) {
-          const x = w * (0.08 + i * 0.19);
-          ctx.fillStyle = "rgba(46,36,64,.94)";
-          ctx.fillRect(x, h * 0.30, w * 0.11, h * 0.38);
-          polygon(ctx, [[x - 18, h * 0.30], [x + w * 0.055, h * 0.16], [x + w * 0.11 + 18, h * 0.30]], "rgba(79,59,97,.96)");
-        }
-      } else if (scene === "war") {
-        for (let i = 0; i < 13; i += 1) {
-          const x = w * (i / 12);
-          ctx.strokeStyle = "rgba(15,15,15,.86)";
-          ctx.lineWidth = 6;
-          ctx.beginPath(); ctx.moveTo(x, h * 0.22); ctx.lineTo(x + 20, h * 0.72); ctx.stroke();
-          polygon(ctx, [[x, h * 0.24], [x + 70, h * 0.31], [x + 5, h * 0.43]], "rgba(107,10,10,.78)");
-        }
-      } else if (scene === "market") {
-        drawCity(ctx, w, h, "rgba(46,26,20,.95)", "rgba(242,153,64,.40)");
-        ctx.fillStyle = "rgba(138,71,31,.72)";
-        ctx.fillRect(0, h * 0.60, w, 10);
-      } else if (scene === "grave") {
-        drawMoon(ctx, w * 0.20, h * 0.18, 42, "rgba(184,214,214,.84)", rgba(sky));
-        for (let i = 0; i < 22; i += 1) {
-          const x = w * ((i * 0.13) % 1);
-          ctx.fillStyle = "rgba(46,56,54,.78)";
-          ctx.fillRect(x, h * (0.62 + 0.10 * (i % 2)), 34, 56);
-        }
-      } else if (scene === "boat") {
-        ctx.fillStyle = "rgba(8,23,38,1)";
-        ctx.fillRect(0, h * 0.52, w, h * 0.48);
-        for (let i = 0; i < 9; i += 1) {
-          ctx.strokeStyle = "rgba(61,122,163,.27)";
-          ctx.lineWidth = 3;
-          ctx.beginPath(); ctx.moveTo(0, h * (0.58 + i * 0.045)); ctx.lineTo(w, h * (0.56 + i * 0.045)); ctx.stroke();
-        }
-        polygon(ctx, [[w * 0.12, h * 0.58], [w * 0.72, h * 0.58], [w * 0.62, h * 0.73], [w * 0.22, h * 0.73]], "rgba(26,13,8,.90)");
-      } else if (scene === "forge") {
-        drawCity(ctx, w, h, "rgba(26,26,31,.95)", "rgba(242,77,31,.48)");
-        for (let i = 0; i < 5; i += 1) {
-          ctx.fillStyle = "rgba(224,46,20,.14)";
-          ctx.beginPath(); ctx.arc(w * (0.58 + i * 0.08), h * 0.30, 42 + i * 8, 0, Math.PI * 2); ctx.fill();
-        }
-      } else {
-        drawCity(ctx, w, h, "rgba(20,20,26,.95)", "rgba(89,107,112,.32)");
-      }
-      ctx.fillStyle = "rgba(62,58,51,.18)";
-      for (let i = 0; i < 80; i += 1) {
-        ctx.fillRect((i * 37) % w, (i * 59) % h, 1, 1);
-      }
-      ctx.fillStyle = "rgba(5,5,8,.26)";
-      ctx.fillRect(0, 0, w, h);
-    }
-
-    function drawBody(ctx, cx, cy, s, robe, accent, prop) {
-      ctx.lineJoin = "round";
-      ctx.lineCap = "round";
-      ctx.fillStyle = "rgb(226,184,137)";
-      ctx.beginPath(); ctx.arc(cx, cy - 64 * s, 36 * s, 0, Math.PI * 2); ctx.fill();
-      polygon(ctx, [
-        [cx - 88 * s, cy + 92 * s],
-        [cx - 52 * s, cy - 32 * s],
-        [cx, cy - 66 * s],
-        [cx + 52 * s, cy - 32 * s],
-        [cx + 88 * s, cy + 92 * s]
-      ], robe);
-      ctx.strokeStyle = accent;
-      ctx.lineWidth = 5 * s;
-      ctx.beginPath(); ctx.moveTo(cx - 52 * s, cy - 8 * s); ctx.lineTo(cx + 52 * s, cy - 8 * s); ctx.stroke();
-      ctx.fillStyle = "rgb(13,13,13)";
-      ctx.beginPath(); ctx.arc(cx - 12 * s, cy - 72 * s, 4.5 * s, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(cx + 12 * s, cy - 72 * s, 4.5 * s, 0, Math.PI * 2); ctx.fill();
-
-      ctx.strokeStyle = accent;
-      ctx.fillStyle = accent;
-      if (prop === "crown") {
-        polygon(ctx, [[cx - 36 * s, cy - 92 * s], [cx - 16 * s, cy - 122 * s], [cx, cy - 96 * s], [cx + 16 * s, cy - 122 * s], [cx + 36 * s, cy - 92 * s]], accent);
-      } else if (prop === "mask") {
-        polygon(ctx, [[cx + 10 * s, cy - 64 * s], [cx + 82 * s, cy - 54 * s], [cx + 12 * s, cy - 44 * s]], "rgb(219,209,168)");
-      } else if (prop === "lamp") {
-        ctx.lineWidth = 6 * s;
-        ctx.beginPath(); ctx.moveTo(cx + 44 * s, cy - 8 * s); ctx.lineTo(cx + 106 * s, cy - 42 * s); ctx.stroke();
-        ctx.fillStyle = "rgba(255,184,56,.85)";
-        ctx.beginPath(); ctx.arc(cx + 116 * s, cy - 48 * s, 18 * s, 0, Math.PI * 2); ctx.fill();
-      } else if (prop === "veil") {
-        strokeArc(ctx, cx, cy - 68 * s, 54 * s, Math.PI, Math.PI * 2, "rgba(237,224,245,.72)", 12 * s);
-      } else if (prop === "helmet") {
-        strokeArc(ctx, cx, cy - 66 * s, 39 * s, Math.PI, Math.PI * 2, "rgb(138,143,138)", 14 * s);
-        ctx.lineWidth = 6 * s;
-        ctx.beginPath(); ctx.moveTo(cx, cy - 104 * s); ctx.lineTo(cx, cy - 136 * s); ctx.stroke();
-      } else if (prop === "goblet") {
-        ctx.fillRect(cx + 64 * s, cy - 54 * s, 24 * s, 36 * s);
-        ctx.lineWidth = 5 * s;
-        ctx.beginPath(); ctx.moveTo(cx + 76 * s, cy - 18 * s); ctx.lineTo(cx + 76 * s, cy + 24 * s); ctx.stroke();
-      } else if (prop === "flower") {
-        for (let i = 0; i < 6; i += 1) {
-          ctx.fillStyle = "rgb(235,235,224)";
-          ctx.beginPath(); ctx.arc(cx + 70 * s + Math.cos(i) * 12 * s, cy - 48 * s + Math.sin(i) * 12 * s, 7 * s, 0, Math.PI * 2); ctx.fill();
-        }
-        ctx.fillStyle = accent;
-        ctx.beginPath(); ctx.arc(cx + 70 * s, cy - 48 * s, 8 * s, 0, Math.PI * 2); ctx.fill();
-      } else if (prop === "gear") {
-        ctx.fillStyle = accent;
-        ctx.beginPath(); ctx.arc(cx + 72 * s, cy - 54 * s, 28 * s, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "rgb(31,38,43)";
-        ctx.beginPath(); ctx.arc(cx + 72 * s, cy - 54 * s, 14 * s, 0, Math.PI * 2); ctx.fill();
-      } else if (prop === "keys") {
-        ctx.lineWidth = 6 * s;
-        ctx.beginPath(); ctx.moveTo(cx + 62 * s, cy - 28 * s); ctx.lineTo(cx + 110 * s, cy); ctx.stroke();
-        strokeArc(ctx, cx + 118 * s, cy + 8 * s, 13 * s, 0, Math.PI * 2, accent, 4 * s);
-      } else if (prop === "scythe") {
-        ctx.strokeStyle = "rgba(209,224,230,.9)";
-        ctx.lineWidth = 6 * s;
-        ctx.beginPath(); ctx.moveTo(cx + 72 * s, cy - 32 * s); ctx.lineTo(cx + 120 * s, cy + 92 * s); ctx.stroke();
-        strokeArc(ctx, cx + 116 * s, cy - 52 * s, 62 * s, 205 * Math.PI / 180, 326 * Math.PI / 180, "rgba(209,224,230,.9)", 6 * s);
-      }
-    }
-
-    function renderCardIllustration(sceneVisual = currentVisual, dragBias = currentDragBias) {
-      if (!sceneVisual || !els.cardIllustration) return;
-      const { ctx, w, h } = resizeCanvas(els.cardIllustration);
-      ctx.clearRect(0, 0, w, h);
-      let accent = sceneVisual.accent || [184, 235, 224];
-      accent = mixColor(accent, [245, 77, 56], Math.max(dragBias, 0) * 0.45);
-      accent = mixColor(accent, [97, 163, 255], Math.max(-dragBias, 0) * 0.45);
-      const accentCss = rgba(accent);
-      const cx = w * 0.5;
-      const cy = h * 0.58;
-      const s = clamp(Math.min(w / 300, h / 245), 0.64, 1.05);
-      const person = sceneVisual.person || "reaper";
-      const props = {
-        noble: ["rgb(107,31,41)", "crown"],
-        doctor: ["rgb(51,64,59)", "mask"],
-        miner: ["rgb(82,59,38)", "lamp"],
-        queen: ["rgb(64,38,107)", "veil"],
-        soldier: ["rgb(46,61,59)", "helmet"],
-        merchant: ["rgb(115,56,31)", "goblet"],
-        bride: ["rgb(199,199,179)", "flower"],
-        saint: ["rgb(87,92,102)", "gear"],
-        warden: ["rgb(28,33,41)", "keys"],
-        reaper: ["rgb(15,15,20)", "scythe"]
-      };
-      if (person === "orphan") {
-        drawBody(ctx, cx - 32 * s, cy + 8 * s, s * 0.78, "rgb(56,64,71)", "rgb(166,194,219)", "small");
-        drawBody(ctx, cx + 48 * s, cy + 20 * s, s * 0.72, "rgb(69,51,46)", "rgb(199,163,112)", "small");
-      } else {
-        const [robe, prop] = props[person] || props.reaper;
-        drawBody(ctx, cx, cy, s, robe, accentCss, prop);
-      }
-      ctx.strokeStyle = "rgba(71,65,53,.45)";
-      ctx.lineWidth = 5;
-      ctx.beginPath(); ctx.moveTo(w * 0.18, h - 4); ctx.lineTo(w * 0.82, h - 4); ctx.stroke();
-    }
-
-    function resolveGodotVisual(card) {
-      const source = [card?.title, card?.tag, card?.body].filter(Boolean).join(" ");
-      const keywordMap = [
-        [/导师|带教|新人|岗规|死神/, 0],
-        [/三人|一人|数量|电车|群众/, 1],
-        [/医生|病|感染|瘟疫|药/, 2],
-        [/矿|工人|工厂|机器|齿轮/, 3],
-        [/王|后|宫|权|梦/, 4],
-        [/军|兵|战|逃|将/, 5],
-        [/钱|商|税|账|交易|冥币/, 6],
-        [/墓|婚|爱|赦|罪/, 7],
-        [/船|河|桥|孤儿|海/, 8],
-        [/圣|机械|工坊|修士/, 9],
-        [/监狱|审判|终局|规则/, 10]
-      ];
-      const matched = keywordMap.find(([pattern]) => pattern.test(source));
-      const fallbackIndex = Math.abs(Number(card?.sequence ?? idx) || idx) % GODOT_CARD_VISUALS.length;
-      return { ...GODOT_CARD_VISUALS[matched ? matched[1] : fallbackIndex] };
-    }
-
-    function renderGodotHud() {
-      const displayCard = cards[idx] || {};
-      const displaySequence = idx >= cards.length ? cards.length : getDisplaySequence(displayCard);
-      els.progress.textContent = idx >= cards.length ? "值班结束" : `第 ${displaySequence} 夜`;
-      const statsVisible = Number(displaySequence) >= 3 || idx >= cards.length;
-      els.godotStats.classList.toggle("stats-visible", statsVisible);
-      els.godotStats.style.opacity = statsVisible ? "1" : "0";
-      const fearValue = GODOT_STAT_BASE["恐惧"] + Math.abs(axes.SP.score) + Math.max(axes.RB.score, 0) * 0.5;
-      const mercyValue = GODOT_STAT_BASE["怜悯"] + Math.max(axes.SP.score, 0) + Math.max(axes.FN.score, 0) * 0.35;
-      const coinValue = GODOT_STAT_BASE["冥币"] + Math.max(axes.QI.score, 0) * 0.55 - Math.max(-axes.FN.score, 0) * 0.25;
-      const orderValue = GODOT_STAT_BASE["秩序"] + axes.RB.score * 0.55 + axes.QI.score * 0.25;
-      const values = {
-        "秩序": clamp(orderValue, 0, 100),
-        "恐惧": clamp(fearValue, 0, 100),
-        "怜悯": clamp(mercyValue, 0, 100),
-        "冥币": clamp(coinValue, 0, 100)
-      };
-      Object.entries(values).forEach(([name, value]) => {
-        const node = els.godotStats?.querySelector(`[data-stat="${name}"] .stat-fill`);
-        if (node) node.style.height = `${value}%`;
-      });
-      if (values["恐惧"] > 70) {
-        els.omen.textContent = "窗户紧闭，祈祷声很轻";
-      } else if (values["怜悯"] > 70) {
-        els.omen.textContent = "亡魂学会了喊你的名字";
-      } else if (values["冥币"] < 18) {
-        els.omen.textContent = "摆渡人敲着空钱袋";
-      } else if (values["秩序"] < 25) {
-        els.omen.textContent = "法官们开始梦游";
-      } else {
-        els.omen.textContent = "亡者排队，生者等候";
-      }
-    }
-
-    function setOutcomeText(text) {
-      lastOutcome = text || "";
-      els.outcome.textContent = lastOutcome;
-    }
-
-    function renderGodotScene(card, dragBias = 0) {
-      currentVisual = resolveGodotVisual(card || cards[idx] || {});
-      currentDragBias = dragBias;
-      renderGodotBackground(currentVisual);
-      renderCardIllustration(currentVisual, currentDragBias);
-      renderGodotHud();
-    }
-
-    function scheduleGodotSceneRender(card, dragBias = 0) {
-      renderGodotScene(card, dragBias);
-      requestAnimationFrame(() => {
-        renderGodotScene(card, dragBias);
-        requestAnimationFrame(() => renderGodotScene(card, dragBias));
+    function updateIconMeters() {
+      AXIS_KEYS.forEach((k, i) => {
+        const el = document.getElementById(`meter${i}`);
+        if (!el) return;
+        el.style.setProperty("--fill", `${axisFillPercent(AXES[k].score)}%`);
       });
     }
 
-    function playCardMotionSfx() {
-      if (!sfxPool.length) return;
-      const { audio } = sfxPool[Math.floor(Math.random() * sfxPool.length)];
-      audio.pause();
-      audio.currentTime = 0;
-      audio.playbackRate = 1 + (Math.random() * 2 - 1) * SFX.pitchJitter;
-      audio.play().catch(() => {});
-    }
-
-    function unlockSfx() {
-      if (sfxUnlocked || !sfxPool.length) return;
-      sfxUnlocked = true;
-      sfxPool.forEach(({ audio }) => audio.load());
-    }
-
-    function fadeAudio(audio, from, to, durationMs, onDone) {
-      const startedAt = performance.now();
-      audio.volume = from;
-      const timer = setInterval(() => {
-        const t = clamp((performance.now() - startedAt) / durationMs, 0, 1);
-        audio.volume = from + (to - from) * t;
-        if (t >= 1) {
-          clearInterval(timer);
-          if (onDone) onDone();
-        }
-      }, 40);
-    }
-
-    function sortedAnchors(track) {
-      return Object.entries(track?.anchors || {})
-        .map(([name, anchor]) => ({ name, ...anchor }))
-        .sort((a, b) => a.at - b.at);
-    }
-
-    function currentAnchorForTrack(key) {
-      const track = BGM.tracks[key];
-      if (!track || !currentBgm) return null;
-      return sortedAnchors(track).reduce((current, anchor) => {
-        return anchor.at <= currentBgm.currentTime ? anchor : current;
-      }, null);
-    }
-
-    function nextAnchorForTrack(key) {
-      const track = BGM.tracks[key];
-      if (!track || !currentBgm) return null;
-      return sortedAnchors(track).find((anchor) => anchor.at > currentBgm.currentTime) || null;
-    }
-
-    function chooseTransition(fromKey, toKey) {
-      const fromAnchor = currentAnchorForTrack(fromKey);
-      const fromType = fromAnchor?.type || "default";
-      const rule = BGM.transitions[`${fromKey}->${toKey}`] || {};
-      const options = rule[fromAnchor?.name] || rule[fromType] || rule.default || [{ target: "intro1" }];
-      const weighted = options.flatMap((option) => Array(option.weight || 1).fill(option));
-      return weighted[Math.floor(Math.random() * weighted.length)] || options[0];
-    }
-
-    function bgmEntryTime(key, anchorName) {
-      const targetTrack = BGM.tracks[key];
-      if (!targetTrack) return 0;
-      return targetTrack.anchors?.[anchorName]?.at || 0;
-    }
-
-    function msUntilNextMusicalAnchor(key) {
-      const nextAnchor = nextAnchorForTrack(key);
-      if (!nextAnchor) return 0;
-      const waitMs = (nextAnchor.at - currentBgm.currentTime) * 1000 - BGM.preFadeMs;
-      return Math.min(Math.max(waitMs, 0), BGM.anchorWaitMaxMs);
-    }
-
-    function switchBgm(key, fadeMs = BGM.fadeMs, waitForAnchor = true, lockedTransition = null) {
-      const track = BGM.tracks[key];
-      if (!track) return;
-      if (!musicEnabled) {
-        currentBgmKey = key;
-        if (currentBgm) {
-          currentBgm.pause();
-          currentBgm.currentTime = 0;
-          currentBgm = null;
-        }
-        return;
+    async function pickFirstImageUrl(base) {
+      for (const ext of IMG_EXTS) {
+        const url = base + ext;
+        try { const r = await fetch(url, { method: "HEAD", cache: "no-store" }); if (r.ok) return url; } catch (_) {}
       }
-      if (currentBgmKey === key) {
-        if (currentBgm && currentBgm.paused) {
-          currentBgm.play().then(() => {
-            fadeAudio(currentBgm, currentBgm.volume, BGM.volume, fadeMs);
-          }).catch(() => {});
-        }
-        return;
-      }
-
-      const previousKey = currentBgmKey;
-      const transition = lockedTransition || chooseTransition(previousKey, key);
-      const waitMs = waitForAnchor ? msUntilNextMusicalAnchor(previousKey) : 0;
-      if (waitMs > 0) {
-        pendingBgmKey = key;
-        setTimeout(() => {
-          if (pendingBgmKey === key) switchBgm(key, fadeMs, false, transition);
-        }, waitMs);
-        return;
-      }
-      pendingBgmKey = "";
-      currentBgmKey = key;
-
-      const nextBgm = new Audio(track.url);
-      nextBgm.loop = true;
-      nextBgm.preload = "auto";
-      nextBgm.volume = 0;
-      nextBgm.currentTime = bgmEntryTime(key, transition.target);
-
-      const previousBgm = currentBgm;
-      currentBgm = nextBgm;
-
-      const startNextBgm = () => nextBgm.play().then(() => {
-        fadeAudio(nextBgm, 0, BGM.volume, fadeMs);
-      }).catch(() => {});
-
-      if (transition.silenceMs) {
-        setTimeout(startNextBgm, transition.silenceMs);
-      } else {
-        startNextBgm();
-      }
-
-      if (previousBgm) {
-        const previousVolume = previousBgm.volume;
-        fadeAudio(previousBgm, previousVolume, 0, fadeMs, () => {
-          previousBgm.pause();
-          previousBgm.currentTime = 0;
-        });
-      }
+      return "";
     }
 
-    function chapterBgmForIndex(cardIndex) {
-      if (!cards.length) return "first";
-      const oneThird = 8;
-      const twoThirds = 23;
-
-      if (cardIndex >= twoThirds) return "twoThirds";
-      if (cardIndex >= oneThird) return "oneThird";
-      return "first";
+    async function setImgByBase(imgEl, base, fallback = "") {
+      const url = await pickFirstImageUrl(base);
+      imgEl.src = url || fallback;
     }
 
-    function updateChapterBgm() {
-      switchBgm(chapterBgmForIndex(idx));
+    async function setBgByBase(base) {
+      const url = await pickFirstImageUrl(base);
+      if (url) document.documentElement.style.setProperty("--bg-image", `url("${url}")`);
     }
 
-    function setMusicEnabled(enabled) {
-      musicEnabled = enabled;
-      els.musicToggle.setAttribute("aria-pressed", String(enabled));
-      els.musicToggle.textContent = enabled ? "音乐 ON" : "音乐 OFF";
-
-      if (!enabled) {
-        if (currentBgm) {
-          fadeAudio(currentBgm, currentBgm.volume, 0, 250, () => {
-            currentBgm.pause();
-          });
-        }
-        return;
-      }
-
-      if (gameStarted) {
-        currentBgmKey = "";
-        switchBgm(chapterBgmForIndex(idx), 500, false);
-      } else {
-        currentBgmKey = "";
-        switchBgm("menu", 500, false);
-      }
+    function cardNumericId(card, index) {
+      const n = Number.parseInt(String(card?.id ?? (index + 1)), 10);
+      return Number.isNaN(n) ? index + 1 : n;
     }
 
-    function toggleMusic() {
-      setMusicEnabled(!musicEnabled);
+    function sceneBaseById(card, index) {
+      const id = cardNumericId(card, index);
+      if (id <= 8) return SCENE_BASE_BY_RANGE.s1;
+      if (id <= 16) return SCENE_BASE_BY_RANGE.s2;
+      if (id <= 24) return SCENE_BASE_BY_RANGE.s3;
+      return SCENE_BASE_BY_RANGE.s4;
     }
 
-    function resetBranchVisitState() {
-      branchVisitState = Object.values(branchMergeRules).reduce((acc, rule) => {
-        acc[rule.group] = { visited: new Set(), displayOrder: [] };
-        return acc;
-      }, {});
-    }
+    async function renderTopIcons() {
+      els.topIcons.innerHTML = ICON_BASES.map((_, i) =>
+        `<div class="meter-icon" id="meter${i}"></div>`
+      ).join("");
 
-    function hasCardId(cardId) {
-      return Object.prototype.hasOwnProperty.call(cardIndexById, String(cardId));
-    }
-
-    function resolveBranchMergeNext(card) {
-      const rule = branchMergeRules[String(card.id)];
-      if (!rule) {
-        return null;
-      }
-
-      const state = branchVisitState[rule.group] || { visited: new Set() };
-      state.visited.add(String(card.id));
-      branchVisitState[rule.group] = state;
-
-      if (!state.visited.has(rule.counterpart) && hasCardId(rule.counterpart)) {
-        return rule.counterpart;
-      }
-
-      const mergeTarget = hasCardId(rule.target) ? rule.target : rule.fallbackTarget;
-      if (mergeTarget && hasCardId(mergeTarget)) {
-        state.visited.clear();
-        state.displayOrder = [];
-        return mergeTarget;
-      }
-
-      return null;
-    }
-
-    function getDisplaySequence(card) {
-      const fallbackSequence = card.sequence ?? idx + 1;
-      const rule = branchMergeRules[String(card.id)];
-      let displaySequence = fallbackSequence;
-
-      if (rule) {
-        const state = branchVisitState[rule.group] || { visited: new Set(), displayOrder: [] };
-        if (!state.displayOrder.includes(String(card.id))) {
-          state.displayOrder.push(String(card.id));
-        }
-        branchVisitState[rule.group] = state;
-
-        const branchPosition = state.displayOrder.indexOf(String(card.id));
-        displaySequence = Number(rule.group) + Math.max(branchPosition, 0);
-      }
-
-      const collapsedRule = collapsedDisplayRules.find((item) => item.ids.has(String(card.id)));
-      if (collapsedRule) {
-        return collapsedRule.display;
-      }
-
-      const reduction = collapsedDisplayRules.reduce((count, item) => {
-        return displaySequence > item.reduceAfter ? count + 1 : count;
-      }, 0);
-      return displaySequence - reduction;
-    }
-
-    async function fetchFirstAvailable(urlCandidates, asText = false) {
-      const errors = [];
-      for (const url of urlCandidates) {
-        try {
-          const response = await fetch(url, { cache: "no-store" });
-          if (!response.ok) {
-            errors.push(`${url} -> ${response.status}`);
-            continue;
-          }
-          return asText ? await response.text() : await response.json();
-        } catch (err) {
-          errors.push(`${url} -> ${err.message}`);
+      for (let i = 0; i < ICON_BASES.length; i++) {
+        const url = await pickFirstImageUrl(ICON_BASES[i]);
+        const el = document.getElementById(`meter${i}`);
+        if (el && url) {
+          el.style.setProperty("--icon-mask", `url("${url}")`);
         }
       }
-      throw new Error("配置读取失败：\n" + errors.join("\n"));
+
+      updateIconMeters();
     }
 
     function parseCSV(text) {
       const src = String(text || "").replace(/^\uFEFF/, "");
-      const rows = [];
-      let row = [];
-      let cell = "";
-      let inQuotes = false;
-
+      const rows = []; let row = []; let cell = ""; let quote = false;
       for (let i = 0; i < src.length; i++) {
-        const ch = src[i];
-
-        if (inQuotes) {
-          if (ch === "\"") {
-            if (src[i + 1] === "\"") {
-              cell += "\"";
-              i++;
-            } else {
-              inQuotes = false;
-            }
-          } else {
-            cell += ch;
-          }
+        const ch = src[i], next = src[i + 1];
+        if (quote) {
+          if (ch === "\"" && next === "\"") { cell += "\""; i++; }
+          else if (ch === "\"") quote = false;
+          else cell += ch;
         } else {
-          if (ch === "\"") {
-            inQuotes = true;
-          } else if (ch === ",") {
-            row.push(cell);
-            cell = "";
-          } else if (ch === "\n") {
-            row.push(cell);
-            rows.push(row);
-            row = [];
-            cell = "";
-          } else if (ch === "\r") {
-            // skip
-          } else {
-            cell += ch;
-          }
+          if (ch === "\"") quote = true;
+          else if (ch === ",") { row.push(cell); cell = ""; }
+          else if (ch === "\n") { row.push(cell); rows.push(row); row = []; cell = ""; }
+          else if (ch !== "\r") cell += ch;
         }
       }
-
-      row.push(cell);
-      if (row.length > 1 || row[0] !== "") rows.push(row);
+      row.push(cell); if (row.length > 1 || row[0] !== "") rows.push(row);
       return rows;
     }
 
-    function normalizeKey(k) {
-      return String(k || "")
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, "")
-        .replace(/[_-]/g, "");
-    }
-
-    function getField(rowObj, aliasKeys, fallback = "") {
-      const normalizedAlias = aliasKeys.map(normalizeKey);
-      for (const key of Object.keys(rowObj)) {
-        if (normalizedAlias.includes(normalizeKey(key))) {
-          return String(rowObj[key] ?? "").trim();
-        }
-      }
+    const normKey = (v) => String(v || "").trim().toLowerCase().replace(/\s+/g, "_");
+    function pickField(obj, keys, fallback = "") {
+      const aliases = keys.map(normKey);
+      for (const k of Object.keys(obj)) if (aliases.includes(normKey(k))) return obj[k];
       return fallback;
     }
 
-    function buildTypeConfigMapFromCsv(csvText) {
-      const rows = parseCSV(csvText);
-      if (!rows.length) return {};
-
-      const headers = rows[0].map(h => String(h || "").trim());
-      const map = {};
-
+    function buildTypeMap(csvText) {
+      const rows = parseCSV(csvText); if (!rows.length) return {};
+      const headers = rows[0].map((h) => String(h || "").trim()); const map = {};
       for (let i = 1; i < rows.length; i++) {
-        const cols = rows[i];
-        if (!cols || cols.every(v => String(v || "").trim() === "")) continue;
-
-        const rowObj = {};
-        headers.forEach((h, idx2) => {
-          rowObj[h] = String(cols[idx2] ?? "").trim();
-        });
-
-        const code = getField(rowObj, ["code", "type", "typecode", "mbti", "nameEn", "类型代号"]).toUpperCase();
-        if (!code) continue;
-
+        const cols = rows[i]; if (!cols.length) continue;
+        const rowObj = {}; headers.forEach((h, idx) => { rowObj[h] = String(cols[idx] ?? "").trim(); });
+        const code = pickField(rowObj, ["type_code", "code", "type", "mbti"]).toUpperCase(); if (!code) continue;
         map[code] = {
-          name: getField(rowObj, ["name", "typeName", "type_name_cn", "cnName", "中文名", "类型名"], code),
-          nameEn: getField(rowObj, ["nameEn", "type_name_en", "enName", "englishName", "英文名"], code),
-          headline: getField(rowObj, ["headline", "title", "resultTitle", "标题"], "你的人格类型是："),
-          quickreadBody: getField(rowObj, ["quickread_body", "quickreadbody", "quickReadBody"], ""),
-          slogan: getField(rowObj, ["slogan", "tagline", "标语"], ""),
-          subline: getField(rowObj, ["subline", "副标题"], ""),
-          desc: getField(rowObj, ["desc", "description", "typeDesc", "描述"], ""),
-          shareText: getField(rowObj, ["shareText", "share", "分享文案"], "")
+          type_name_cn: pickField(rowObj, ["type_name_cn", "name_cn", "name", "title"]),
+          slogan: pickField(rowObj, ["slogan"]),
+          subline: pickField(rowObj, ["subline"]),
+          quickread_body: pickField(rowObj, ["quickread_body", "quickread", "desc", "description"])
         };
       }
-
       return map;
     }
 
-    async function loadConfigs() {
-      els.progress.textContent = "正在读取配置...";
-      const [storyConfig, typesCsvText] = await Promise.all([
-        fetchFirstAvailable(CONFIG_URLS.storyCandidates, false),
-        fetchFirstAvailable(CONFIG_URLS.typesCsvCandidates, true)
+    async function fetchFirstText(candidates) {
+      const errors = [];
+      for (const url of candidates) {
+        try { const r = await fetch(url, { cache: "no-store" }); if (r.ok) return await r.text(); errors.push(`${url}:${r.status}`); }
+        catch (e) { errors.push(`${url}:${e.message}`); }
+      }
+      throw new Error(`文本加载失败：${errors.join(" | ")}`);
+    }
+
+    async function fetchFirstJSON(candidates) {
+      const errors = [];
+      for (const url of candidates) {
+        try { const r = await fetch(url, { cache: "no-store" }); if (r.ok) return await r.json(); errors.push(`${url}:${r.status}`); }
+        catch (e) { errors.push(`${url}:${e.message}`); }
+      }
+      throw new Error(`JSON 加载失败：${errors.join(" | ")}`);
+    }
+
+    function getTypeMeta(code) {
+      return typeMap[code] || { type_name_cn: "未命名类型", slogan: "", subline: "", quickread_body: "" };
+    }
+
+    async function renderCard() {
+      if (idx >= cards.length) return finishGame();
+      const card = cards[idx], left = card.left || {}, right = card.right || {};
+      els.body.textContent = [card.title || "", card.body || card.text || ""].filter(Boolean).join("\n\n");
+      els.leftChoice.textContent = left.label || "向左";
+      els.rightChoice.textContent = right.label || "向右";
+
+      els.leftChoice.style.opacity = "0.5";
+      els.rightChoice.style.opacity = "0.5";
+      els.leftChoice.style.transform = "translateY(-50%) translateX(0px)";
+      els.rightChoice.style.transform = "translateY(-50%) translateX(0px)";
+
+      els.visualDrag.style.opacity = "1";
+      els.visualDrag.style.transform = "translateX(0px) rotate(0deg)";
+
+      await Promise.all([
+        setImgByBase(els.cardImage, CARD_IMAGE_BASE, els.cardImage.src),
+        setBgByBase(sceneBaseById(card, idx))
       ]);
-
-      cards = Array.isArray(storyConfig.cards) ? storyConfig.cards : [];
-      typeConfigs = buildTypeConfigMapFromCsv(typesCsvText);
-      cardIndexById = Object.fromEntries(cards.map((card, index) => [String(card.id), index]));
-
-      if (!cards.length) {
-        throw new Error("剧情配置里没有可用卡牌");
-      }
-      if (!Object.keys(typeConfigs).length) {
-        throw new Error("CSV 解析完成，但没有得到人格类型。请检查 CSV 表头是否包含 code/type 等字段。");
-      }
     }
 
-    function showConfigError(error) {
-      renderGodotScene({ title: "配置读取失败", sequence: 0 });
-      els.tag.textContent = "配置读取失败";
-      els.title.textContent = "无法加载玩法配置";
-      const localPreviewHint = location.protocol === "file:" ? [
-        "你正在直接双击打开 index.html，本地文件模式会拦截 fetch。",
-        "请用本地预览启动后再访问（http://127.0.0.1:4174/index.html）。",
-        ""
-      ] : [];
-      els.body.textContent = [
-        ...localPreviewHint,
-        "请确认以下文件可访问：",
-        ...CONFIG_URLS.storyCandidates.map(p => `剧情：${p}`),
-        ...CONFIG_URLS.typesCsvCandidates.map(p => `人格CSV：${p}`),
-        "",
-        "错误信息：",
-        error.message
-      ].join("\n");
-      els.leftChoice.textContent = "";
-      els.rightChoice.textContent = "";
-      els.btnLeft.textContent = "配置未加载";
-      els.btnRight.textContent = "配置未加载";
-      els.btnLeft.disabled = true;
-      els.btnRight.disabled = true;
-      els.progress.textContent = "配置错误";
-      els.omen.textContent = "请先让配置文件可以被浏览器读取";
-      setOutcomeText("");
-    }
-
-    function applyEffects(effects) {
-      Object.entries(effects || {}).forEach(([k, delta]) => {
-        if (axes[k]) axes[k].score += Number(delta) || 0;
-      });
-    }
-
-    function renderAxes() {
-      const rows = Object.entries(axes).map(([k, axis]) => {
-        const score = clamp(axis.score, -60, 60);
-        const width = Math.abs(score) / 60 * 100;
-        return `
-          <div class="axis-row">
-            <span>${axis.left}</span>
-            <div class="bar"><div class="bar-fill" style="width:${width}%"></div></div>
-            <span style="text-align:right">${axis.right}</span>
-            <span class="muted" style="grid-column: 1 / 4;">${k}：${score >= 0 ? "偏" + axis.left : "偏" + axis.right}（${Math.abs(score)}）</span>
-          </div>
-        `;
-      }).join("");
-      els.axisBoard.innerHTML = rows;
-    }
-
-    function renderCard() {
-      if (idx >= cards.length) {
-        finishGame();
-        return;
-      }
-      const card = cards[idx];
-      const left = card.left || {};
-      const right = card.right || {};
-      const displaySequence = getDisplaySequence(card);
-      els.tag.textContent = card.tag || `裁决 ${displaySequence}`;
-      els.title.textContent = card.title || card.text || "未命名裁决";
-      els.body.textContent = card.body || card.text || "";
-      els.leftChoice.textContent = left.label || "左选项";
-      els.rightChoice.textContent = right.label || "右选项";
-      els.btnLeft.textContent = "左：" + (left.label || "左选项");
-      els.btnRight.textContent = "右：" + (right.label || "右选项");
-      els.leftFlag.textContent = "左：" + (left.label || "左选项");
-      els.rightFlag.textContent = "右：" + (right.label || "右选项");
-      els.progress.textContent = `第 ${displaySequence} 夜`;
-      els.card.style.opacity = "1";
-      els.card.style.transform = "translateX(-50%) rotate(0deg) scale(1)";
-      els.leftChoice.style.opacity = "0.42";
-      els.rightChoice.style.opacity = "0.42";
-      els.leftChoice.style.transform = "scale(1)";
-      els.rightChoice.style.transform = "scale(1)";
-      els.card.classList.remove("show-left", "show-right");
-      currentDragBias = 0;
-      scheduleGodotSceneRender(card, 0);
-      updateChapterBgm();
-    }
-
-    function nextIndexFor(card, choice) {
-      const branchNextId = resolveBranchMergeNext(card);
-      if (branchNextId && hasCardId(branchNextId)) {
-        return cardIndexById[String(branchNextId)];
-      }
-
-      const nextId = choice.next || card.autoNext;
-      if (nextId && hasCardId(nextId)) {
-        return cardIndexById[String(nextId)];
-      }
-      return idx + 1;
+    function applyEffects(effects = {}) {
+      AXIS_KEYS.forEach((k) => { AXES[k].score += Number(effects[k] || 0); });
+      updateIconMeters();
     }
 
     function choose(side) {
-      if (idx >= cards.length) return;
-      const card = cards[idx];
-      const choice = side === "left" ? card.left || {} : card.right || {};
-      unlockSfx();
-      playCardMotionSfx();
-      applyEffects(choice.effects);
+      const card = cards[idx]; if (!card) return;
+      const choice = side === "left" ? (card.left || {}) : (card.right || {});
+      applyEffects(choice.effects || {});
+      els.lastChoice.textContent = `上个选项：${choice.label || "未命名选择"}`;
 
       const dir = side === "left" ? -1 : 1;
-      els.card.style.transform = `translate(calc(-50% + ${dir * (window.innerWidth + 280)}px), 0px) rotate(${dir * 18}deg) scale(1.02)`;
-      els.card.style.opacity = "0";
-      setOutcomeText(choice.outcome || choice.result || choice.feedback || `判决已记录：${choice.label || "无名灵魂"}`);
+      els.visualDrag.style.transform = `translateX(${dir * (window.innerWidth * 0.45)}px) rotate(${dir * 14}deg)`;
+      els.visualDrag.style.opacity = "0";
 
-      setTimeout(() => {
-        idx = nextIndexFor(card, choice);
-        renderAxes();
-        renderCard();
-      }, 240);
+      setTimeout(async () => { idx++; await renderCard(); }, 150);
     }
 
-    function getTypeCode() {
-      const q = axes.QI.score >= 0 ? "Q" : "I";
-      const s = axes.SP.score >= 0 ? "S" : "P";
-      const f = axes.FN.score >= 0 ? "F" : "N";
-      const r = axes.RB.score >= 0 ? "R" : "B";
-      return q + s + f + r;
+    function onDragStart(x) {
+      if (els.result.classList.contains("show")) return;
+      dragging = true; startX = x; offsetX = 0;
+      els.visualDrag.style.transition = "none";
     }
 
-    function getTypeConfig(code) {
-      return typeConfigs[code] || {
-        name: "未命名人格",
-        nameEn: code,
-        headline: "你的人格类型是：",
-        slogan: "",
-        desc: "当前分值组合没有找到对应的人格配置。",
-        shareText: `我测出${code}。`
-      };
-    }
-
-    function axisSummary() {
-      const mapping = {
-        QI: ["Q 数量主义", "I 个体主义"],
-        SP: ["S 自我圈层", "P 公共中立"],
-        FN: ["F 长期结果", "N 当下止损"],
-        RB: ["R 规则服从", "B 规则突破"]
-      };
-      return Object.keys(mapping).map((k) => {
-        const v = axes[k].score;
-        const label = v >= 0 ? mapping[k][0] : mapping[k][1];
-        return `${label} ${Math.abs(v)}`;
-      }).join(" | ");
-    }
-
-    function finishGame() {
-      els.card.style.display = "none";
-      els.gameShell.hidden = true;
-      els.gameControls.style.display = "none";
-
-      const code = getTypeCode();
-      const type = getTypeConfig(code);
-      const typeLabel = type.name || code;
-      const typeTitle = type.slogan || "";
-      const typeMeta = [
-        type.subline,
-        `${type.headline || "你的人格类型是："}${code}（${typeLabel}）`
-      ].filter(Boolean).join("\n");
-
-      els.result.classList.add("show");
-      els.typeName.textContent = typeTitle;
-      els.typeCode.textContent = typeMeta;
-      els.typeDesc.textContent = [
-        type.quickreadBody,
-        type.desc
-      ].filter(Boolean).join("\n\n");
-
-      const share = [
-        "【死神值班：电车裁决】",
-        `我的结果：${code}（${typeLabel}）`,
-        type.shareText || "",
-        axisSummary(),
-        "你会签下怎样的死亡裁决？"
-      ].filter(Boolean).join("\n");
-      els.shareText.textContent = share;
-      els.progress.textContent = "值班结束";
-    }
-
-    function resetGame() {
-      Object.keys(axes).forEach((k) => axes[k].score = 0);
-      idx = 0;
-      gameStarted = true;
-      resetBranchVisitState();
-      els.result.classList.remove("show");
-      els.mainMenu.hidden = true;
-      els.gameShell.hidden = false;
-      els.card.style.display = "flex";
-      document.getElementById("board").style.display = "block";
-      els.gameControls.style.display = "none";
-      setOutcomeText("");
-      renderAxes();
-      renderCard();
-    }
-
-    function startGame() {
-      unlockSfx();
-      resetGame();
-    }
-
-    function onDragStart(clientX, clientY) {
-      dragging = true;
-      startX = clientX;
-      startY = clientY;
-      offsetX = 0;
-      offsetY = 0;
-      els.card.style.transition = "none";
-      els.card.style.transform = "translateX(-50%) rotate(0deg) scale(1.02)";
-    }
-
-    function onDragMove(clientX, clientY) {
+    function onDragMove(x) {
       if (!dragging) return;
-      offsetX = clientX - startX;
-      offsetY = (clientY - startY) * 0.16;
+      offsetX = x - startX;
       const bias = clamp(offsetX / SWIPE_THRESHOLD, -1, 1);
-      const rotate = bias * 8;
-      els.card.style.transform = `translate(calc(-50% + ${offsetX}px), ${offsetY}px) rotate(${rotate}deg) scale(1.02)`;
-      els.leftChoice.style.opacity = String(0.42 + Math.max(-bias, 0) * 0.58);
-      els.rightChoice.style.opacity = String(0.42 + Math.max(bias, 0) * 0.58);
-      els.leftChoice.style.transform = `scale(${1 + Math.max(-bias, 0) * 0.04})`;
-      els.rightChoice.style.transform = `scale(${1 + Math.max(bias, 0) * 0.04})`;
-      renderCardIllustration(currentVisual, bias);
+      els.visualDrag.style.transform = `translateX(${offsetX}px) rotate(${bias * 8}deg)`;
 
-      els.card.classList.toggle("show-left", offsetX < -40);
-      els.card.classList.toggle("show-right", offsetX > 40);
+      const leftAlpha = clamp(0.5 - 0.5 * bias, 0, 1);
+      const rightAlpha = clamp(0.5 + 0.5 * bias, 0, 1);
+      els.leftChoice.style.opacity = `${leftAlpha}`;
+      els.rightChoice.style.opacity = `${rightAlpha}`;
+
+      const retreat = 86;
+      els.leftChoice.style.transform = `translateY(-50%) translateX(${bias < 0 ? -Math.abs(bias) * retreat : 0}px)`;
+      els.rightChoice.style.transform = `translateY(-50%) translateX(${bias > 0 ? Math.abs(bias) * retreat : 0}px)`;
     }
 
     function onDragEnd() {
       if (!dragging) return;
       dragging = false;
-      els.card.style.transition = "transform 160ms ease, opacity 160ms ease";
-      if (offsetX <= -SWIPE_THRESHOLD) {
-        choose("left");
-        return;
-      }
-      if (offsetX >= SWIPE_THRESHOLD) {
-        choose("right");
-        return;
-      }
-      els.card.style.transform = "translateX(-50%) rotate(0deg) scale(1)";
-      els.leftChoice.style.opacity = "0.42";
-      els.rightChoice.style.opacity = "0.42";
-      els.leftChoice.style.transform = "scale(1)";
-      els.rightChoice.style.transform = "scale(1)";
-      renderCardIllustration(currentVisual, 0);
-      els.card.classList.remove("show-left", "show-right");
+      els.visualDrag.style.transition = "transform .16s ease, opacity .16s ease";
+      if (Math.abs(offsetX) >= SWIPE_THRESHOLD) return choose(offsetX < 0 ? "left" : "right");
+
+      els.visualDrag.style.transform = "translateX(0px) rotate(0deg)";
+      els.leftChoice.style.opacity = "0.5";
+      els.rightChoice.style.opacity = "0.5";
+      els.leftChoice.style.transform = "translateY(-50%) translateX(0px)";
+      els.rightChoice.style.transform = "translateY(-50%) translateX(0px)";
     }
 
-    els.btnLeft.addEventListener("click", () => choose("left"));
-    els.btnRight.addEventListener("click", () => choose("right"));
-    els.startBtn.addEventListener("click", startGame);
-    els.musicToggle.addEventListener("click", toggleMusic);
-    els.mainMenu.addEventListener("pointerdown", () => switchBgm("menu", BGM.fadeMs, false), { once: true });
+    async function finishGame() {
+      const code = getTypeCode(), meta = getTypeMeta(code);
+      await setImgByBase(els.resultIcon, RESULT_ICON_BASE + code, els.resultIcon.src);
+      els.resultCode.textContent = code;
+      els.typeNameCn.textContent = meta.type_name_cn || "未命名类型";
+      els.typeSlogan.textContent = meta.slogan || "";
+      els.typeSubline.textContent = meta.subline || "";
+      els.typeQuickread.textContent = meta.quickread_body || "";
+      els.result.classList.add("show");
+    }
 
-    document.addEventListener("keydown", (e) => {
-      if (!gameStarted || idx >= cards.length) return;
-      if (["ArrowLeft", "a", "A"].includes(e.key)) choose("left");
-      if (["ArrowRight", "d", "D"].includes(e.key)) choose("right");
-    });
+    async function resetGame() {
+      AXIS_KEYS.forEach((k) => { AXES[k].score = 0; });
+      updateIconMeters();
+      idx = 0;
+      els.result.classList.remove("show");
+      els.lastChoice.textContent = "等待你的第一次选择";
+      await renderCard();
+    }
 
-    els.copyBtn.addEventListener("click", async () => {
-      try {
-        await navigator.clipboard.writeText(els.shareText.textContent);
-        els.copyBtn.textContent = "已复制";
-      } catch {
-        els.copyBtn.textContent = "复制失败，请手动复制";
-      }
-      setTimeout(() => els.copyBtn.textContent = "复制分享文案", 1200);
-    });
+    function bindEvents() {
+      els.startBtn.addEventListener("click", () => { els.menu.hidden = true; els.game.hidden = false; });
+      els.restartBtn.addEventListener("click", resetGame);
 
-    els.restartBtn.addEventListener("click", resetGame);
-
-    els.card.addEventListener("pointerdown", (e) => {
-      els.card.setPointerCapture(e.pointerId);
-      onDragStart(e.clientX, e.clientY);
-    });
-    els.card.addEventListener("pointermove", (e) => onDragMove(e.clientX, e.clientY));
-    els.card.addEventListener("pointerup", onDragEnd);
-    els.card.addEventListener("pointercancel", onDragEnd);
-
-    window.addEventListener("resize", () => {
-      renderGodotBackground(currentVisual);
-      renderCardIllustration(currentVisual, currentDragBias);
-    });
-
-    if ("ResizeObserver" in window) {
-      const illustrationObserver = new ResizeObserver(() => {
-        renderCardIllustration(currentVisual, currentDragBias);
+      els.visualDrag.addEventListener("pointerdown", (e) => {
+        els.visualDrag.setPointerCapture(e.pointerId);
+        onDragStart(e.clientX);
       });
-      illustrationObserver.observe(els.cardIllustration);
-      illustrationObserver.observe(els.card);
+      els.visualDrag.addEventListener("pointermove", (e) => onDragMove(e.clientX));
+      els.visualDrag.addEventListener("pointerup", onDragEnd);
+      els.visualDrag.addEventListener("pointercancel", onDragEnd);
+
+      window.addEventListener("keydown", (e) => {
+        if (els.result.classList.contains("show")) return;
+        if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") choose("left");
+        if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") choose("right");
+      });
     }
 
     async function init() {
+      bindEvents();
+      await renderTopIcons();
+      await setBgByBase(SCENE_BASE_BY_RANGE.s1);
+
       try {
-        await loadConfigs();
-        resetBranchVisitState();
-        renderAxes();
-        switchBgm("menu", BGM.fadeMs, false);
-      } catch (error) {
-        els.mainMenu.hidden = true;
-        els.gameShell.hidden = false;
-        showConfigError(error);
+        const [storyConfig, typeCsv] = await Promise.all([fetchFirstJSON(CONFIG_URLS), fetchFirstText(TYPE_CONFIG_URLS)]);
+        cards = Array.isArray(storyConfig.cards) ? storyConfig.cards : [];
+        typeMap = buildTypeMap(typeCsv);
+        await resetGame();
+      } catch (e) {
+        els.body.textContent = e.message;
       }
     }
 

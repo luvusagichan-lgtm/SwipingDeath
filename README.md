@@ -1,20 +1,24 @@
 # SwipingDeath
-repo for ai game dev contest
 
-## Local preview
+## Web Demo (Standalone)
 
-Do not open `index.html` directly from the filesystem. The page loads JSON config files with `fetch()`, and browsers block that under `file://`.
+Current playable demo is fully web-based, using:
+
+- `index.html`
+- `assets/`
+- `submissions/shinigami/config/`
+
+The `0525/` folder is kept only as archived Godot source/release history and is **not required** for the web demo to run.
+
+## Local Preview
+
+Do not open `index.html` directly from `file://`.  
+The page loads config files via `fetch()`, which browsers block in local-file mode.
 
 On Windows, double-click:
 
 ```text
 Start_Local_Preview.bat
-```
-
-Or run:
-
-```text
-python -m http.server 4174 --bind 127.0.0.1
 ```
 
 Then open:
