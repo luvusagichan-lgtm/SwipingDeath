@@ -417,6 +417,10 @@
       imgEl.src = url || fallback;
     }
 
+    async function setImgByBase(imgEl, base, fallback = "") {
+      return setImgByCandidates(imgEl, IMG_EXTS.map((ext) => base + ext), fallback);
+    }
+
     async function setBgByBase(base) {
       const url = await pickFirstImageUrl(IMG_EXTS.map((ext) => base + ext));
       if (url) document.documentElement.style.setProperty("--bg-image", `url("${url}")`);
