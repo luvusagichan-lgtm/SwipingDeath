@@ -30,7 +30,9 @@
         "next": "02"
       },
       "autoNext": null,
-      "note": null
+      "note": null,
+      "imageName": "card_1",
+      "imagePath": "assets/card/card_1.png"
     },
     {
       "sequence": 2,
@@ -60,7 +62,9 @@
         "next": "03"
       },
       "autoNext": null,
-      "note": null
+      "note": null,
+      "imageName": "card_2",
+      "imagePath": "assets/card/card_2.png"
     },
     {
       "sequence": 3,
@@ -90,7 +94,9 @@
         "next": "04"
       },
       "autoNext": null,
-      "note": null
+      "note": null,
+      "imageName": "card_2",
+      "imagePath": "assets/card/card_2.png"
     },
     {
       "sequence": 4,
@@ -120,7 +126,9 @@
         "next": "05"
       },
       "autoNext": null,
-      "note": "仪表盘出现；选完 icon 进度条变化"
+      "note": "仪表盘出现；选完 icon 进度条变化",
+      "imageName": "card_3",
+      "imagePath": "assets/card/card_3.png"
     },
     {
       "sequence": 5,
@@ -150,7 +158,9 @@
         "next": "06"
       },
       "autoNext": null,
-      "note": null
+      "note": null,
+      "imageName": "card_2",
+      "imagePath": "assets/card/card_2.png"
     },
     {
       "sequence": 6,
@@ -180,7 +190,9 @@
         "next": "07"
       },
       "autoNext": null,
-      "note": null
+      "note": null,
+      "imageName": "card_4",
+      "imagePath": "assets/card/card_4.png"
     },
     {
       "sequence": 7,
@@ -210,7 +222,9 @@
         "next": "08"
       },
       "autoNext": null,
-      "note": null
+      "note": null,
+      "imageName": "card_5",
+      "imagePath": "assets/card/card_5.png"
     },
     {
       "sequence": 8,
@@ -240,7 +254,9 @@
         "next": "09"
       },
       "autoNext": null,
-      "note": null
+      "note": null,
+      "imageName": "card_6",
+      "imagePath": "assets/card/card_6.png"
     },
     {
       "sequence": 9,
@@ -270,7 +286,9 @@
         "next": "10-R"
       },
       "autoNext": null,
-      "note": null
+      "note": null,
+      "imageName": "card_7",
+      "imagePath": "assets/card/card_7.png"
     },
     {
       "sequence": 10,
@@ -300,7 +318,9 @@
         "next": "10-R"
       },
       "autoNext": "10-R",
-      "note": "下一个自动跳转 10-R（双卡阅读后收束到 12）"
+      "note": "下一个自动跳转 10-R（双卡阅读后收束到 12）",
+      "imageName": "card_8",
+      "imagePath": "assets/card/card_8.png"
     },
     {
       "sequence": 11,
@@ -330,7 +350,9 @@
         "next": "10-L"
       },
       "autoNext": "10-L",
-      "note": "下一个自动跳转 10-L（双卡阅读后收束到 12）"
+      "note": "下一个自动跳转 10-L（双卡阅读后收束到 12）",
+      "imageName": "card_9",
+      "imagePath": "assets/card/card_9.png"
     },
     {
       "sequence": 12,
@@ -360,7 +382,9 @@
         "next": "13"
       },
       "autoNext": null,
-      "note": null
+      "note": null,
+      "imageName": "card_2",
+      "imagePath": "assets/card/card_2.png"
     },
     {
       "sequence": 13,
@@ -390,7 +414,9 @@
         "next": "14-R"
       },
       "autoNext": null,
-      "note": null
+      "note": null,
+      "imageName": "card_10",
+      "imagePath": "assets/card/card_10.png"
     },
     {
       "sequence": 14,
@@ -420,7 +446,9 @@
         "next": "16"
       },
       "autoNext": "16",
-      "note": "这张卡结束后跳转 16"
+      "note": "这张卡结束后跳转 16",
+      "imageName": "card_11",
+      "imagePath": "assets/card/card_11.png"
     },
     {
       "sequence": 15,
@@ -450,7 +478,9 @@
         "next": "16"
       },
       "autoNext": "16",
-      "note": "这张卡结束后跳转 16"
+      "note": "这张卡结束后跳转 16",
+      "imageName": "card_12",
+      "imagePath": "assets/card/card_12.png"
     },
     {
       "sequence": 16,
@@ -480,7 +510,9 @@
         "next": "17"
       },
       "autoNext": null,
-      "note": null
+      "note": null,
+      "imageName": "card_2",
+      "imagePath": "assets/card/card_2.png"
     },
     {
       "sequence": 17,
@@ -510,7 +542,9 @@
         "next": "18-R"
       },
       "autoNext": null,
-      "note": null
+      "note": null,
+      "imageName": "card_13",
+      "imagePath": "assets/card/card_13.png"
     },
     {
       "sequence": 18,
@@ -540,7 +574,9 @@
         "next": "18-R"
       },
       "autoNext": "18-R",
-      "note": "下一个自动跳转 18-R（双卡阅读后收束到 20）"
+      "note": "下一个自动跳转 18-R（双卡阅读后收束到 20）",
+      "imageName": "card_19",
+      "imagePath": "assets/card/card_19.jfif"
     },
     {
       "sequence": 19,
@@ -570,7 +606,9 @@
         "next": "18-L"
       },
       "autoNext": "18-L",
-      "note": "下一个自动跳转 18-L（双卡阅读后收束到 20）"
+      "note": "下一个自动跳转 18-L（双卡阅读后收束到 20）",
+      "imageName": "card_20",
+      "imagePath": "assets/card/card_20.png"
     },
     {
       "sequence": 20,
@@ -600,7 +638,9 @@
         "next": "21"
       },
       "autoNext": null,
-      "note": "画面可模糊出现：伦理审核 / 关联观察对象：ZXL（家属端）"
+      "note": "画面可模糊出现：伦理审核 / 关联观察对象：ZXL（家属端）",
+      "imageName": "card_21",
+      "imagePath": "assets/card/card_21.jfif"
     },
     {
       "sequence": 21,
@@ -630,7 +670,9 @@
         "next": "22-R"
       },
       "autoNext": null,
-      "note": null
+      "note": null,
+      "imageName": "card_2",
+      "imagePath": "assets/card/card_2.png"
     },
     {
       "sequence": 22,
@@ -660,7 +702,9 @@
         "next": "24"
       },
       "autoNext": "24",
-      "note": "这张卡结束后跳转 24"
+      "note": "这张卡结束后跳转 24",
+      "imageName": "card_22",
+      "imagePath": "assets/card/card_22.jfif"
     },
     {
       "sequence": 23,
@@ -690,7 +734,9 @@
         "next": "24"
       },
       "autoNext": "24",
-      "note": "这张卡结束后跳转 24"
+      "note": "这张卡结束后跳转 24",
+      "imageName": "card_18",
+      "imagePath": "assets/card/card_18.png"
     },
     {
       "sequence": 24,
@@ -720,7 +766,9 @@
         "next": "25"
       },
       "autoNext": null,
-      "note": null
+      "note": null,
+      "imageName": "card_2",
+      "imagePath": "assets/card/card_2.png"
     },
     {
       "sequence": 25,
@@ -750,7 +798,9 @@
         "next": "26-R"
       },
       "autoNext": null,
-      "note": null
+      "note": null,
+      "imageName": "card_23",
+      "imagePath": "assets/card/card_23.png"
     },
     {
       "sequence": 26,
@@ -780,7 +830,9 @@
         "next": "26-R"
       },
       "autoNext": "26-R",
-      "note": "下一个自动跳转 26-R（双卡阅读后收束到 28）"
+      "note": "下一个自动跳转 26-R（双卡阅读后收束到 28）",
+      "imageName": "card_24",
+      "imagePath": "assets/card/card_24.jfif"
     },
     {
       "sequence": 27,
@@ -810,7 +862,9 @@
         "next": "26-L"
       },
       "autoNext": "26-L",
-      "note": "下一个自动跳转 26-L（双卡阅读后收束到 28）"
+      "note": "下一个自动跳转 26-L（双卡阅读后收束到 28）",
+      "imageName": "card_25",
+      "imagePath": "assets/card/card_25.png"
     },
     {
       "sequence": 28,
@@ -840,7 +894,9 @@
         "next": "29"
       },
       "autoNext": null,
-      "note": null
+      "note": null,
+      "imageName": "card_2",
+      "imagePath": "assets/card/card_2.png"
     },
     {
       "sequence": 29,
@@ -870,7 +926,9 @@
         "next": "30-R"
       },
       "autoNext": null,
-      "note": null
+      "note": null,
+      "imageName": "card_26",
+      "imagePath": "assets/card/card_26.jfif"
     },
     {
       "sequence": 30,
@@ -900,7 +958,9 @@
         "next": "32"
       },
       "autoNext": "32",
-      "note": "这张卡结束后跳转 32"
+      "note": "这张卡结束后跳转 32",
+      "imageName": "card_28",
+      "imagePath": "assets/card/card_28.png"
     },
     {
       "sequence": 31,
@@ -930,7 +990,9 @@
         "next": "32"
       },
       "autoNext": "32",
-      "note": "这张卡结束后跳转 32"
+      "note": "这张卡结束后跳转 32",
+      "imageName": "card_27",
+      "imagePath": "assets/card/card_27.jfif"
     },
     {
       "sequence": 32,
@@ -960,7 +1022,9 @@
         "next": "END"
       },
       "autoNext": null,
-      "note": null
+      "note": null,
+      "imageName": "card_2",
+      "imagePath": "assets/card/card_2.png"
     }
   ]
 }
