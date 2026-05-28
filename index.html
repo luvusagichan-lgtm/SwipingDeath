@@ -78,6 +78,27 @@
       color: #1f1f1f;
     }
 
+    .audio-toggle {
+      position: fixed;
+      z-index: 120;
+      top: 18px;
+      right: 18px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.36);
+      background: rgba(16, 17, 20, 0.72);
+      color: #fff;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(8px);
+      font-size: 16px;
+      line-height: 1;
+      padding: 10px 14px;
+    }
+
+    .audio-toggle[aria-pressed="false"] {
+      color: #d7dce6;
+      background: rgba(16, 17, 20, 0.48);
+    }
+
     .menu-bg-image {
       position: absolute;
       inset: 0;
@@ -460,10 +481,12 @@
   </style>
 </head>
 <body>
+  <button class="audio-toggle" id="musicToggle" aria-pressed="true" type="button">音乐 ON</button>
+
   <section class="menu" id="menu">
     <div class="menu-card">
       <img class="menu-bg-image" src="./assets/openpage.png" alt="开场页" />
-      <button id="startBtn" class="menu-start" type="button" onclick="document.getElementById('menu').hidden=true;document.getElementById('game').hidden=false;">开始裁决</button>
+      <button id="startBtn" class="menu-start" type="button">开始裁决</button>
     </div>
   </section>
 
@@ -529,6 +552,18 @@
       "submissions/shinigami/config/shinigami_16types_config",
       "shinigami_16types_config.csv"
     ];
+    const BGM_TRACKS_CSV_URLS = [
+      "submissions/austin/audio-placeholder-v01/assets/audio/bgm_config/bgm_tracks.csv",
+      "bgm_tracks.csv"
+    ];
+    const BGM_ANCHORS_CSV_URLS = [
+      "submissions/austin/audio-placeholder-v01/assets/audio/bgm_config/bgm_anchors.csv",
+      "bgm_anchors.csv"
+    ];
+    const BGM_TRANSITIONS_CSV_URLS = [
+      "submissions/austin/audio-placeholder-v01/assets/audio/bgm_config/bgm_transitions.csv",
+      "bgm_transitions.csv"
+    ];
 
     const AXIS_KEYS = ["QI", "SP", "FN", "RB"];
     const AXES = {
@@ -541,10 +576,33 @@
     const CARD_IMAGE_FALLBACK = "./assets/card/card_1.png";
     const RESULT_ICON_BASE = "./assets/icon_type/icon_type_";
     const SCENE_BASE_BY_RANGE = { s1:"./assets/scene/scene_01", s2:"./assets/scene/scene_02", s3:"./assets/scene/scene_03", s4:"./assets/scene/scene_04" };
+    const SFX = {
+      cardMotion: [
+        {
+          url: "submissions/austin/audio-placeholder-v01/assets/audio/sfx/u_nharq4usid-swipe-255512.mp3",
+          gain: 1
+        },
+        {
+          url: "submissions/austin/audio-placeholder-v01/assets/audio/sfx/universfield-swoosh-026-454861.mp3",
+          gain: 0.28
+        }
+      ],
+      volume: 0.42,
+      pitchJitter: 0.2
+    };
+    const BGM = {
+      tracks: {},
+      transitions: {},
+      volume: 0.17,
+      fadeMs: 1800,
+      preFadeMs: 1500,
+      anchorWaitMaxMs: 30000
+    };
 
     const els = {
       menu: document.getElementById("menu"),
       startBtn: document.getElementById("startBtn"),
+      musicToggle: document.getElementById("musicToggle"),
       game: document.getElementById("game"),
       topIcons: document.getElementById("topIcons"),
       visualDrag: document.getElementById("visualDrag"),
@@ -571,8 +629,19 @@
     let dragging = false;
     let startX = 0;
     let offsetX = 0;
+    let gameStarted = false;
+    let currentBgm = null;
+    let currentBgmKey = "";
+    let pendingBgmKey = "";
+    let musicEnabled = true;
 
     const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+    const sfxPool = SFX.cardMotion.map((sfx) => {
+      const audio = new Audio(sfx.url);
+      audio.preload = "auto";
+      audio.volume = clamp(SFX.volume * (sfx.gain || 1), 0, 1);
+      return { audio };
+    });
     const getTypeCode = () => (AXES.QI.score >= 0 ? "Q" : "I") + (AXES.SP.score >= 0 ? "S" : "P") + (AXES.FN.score >= 0 ? "F" : "N") + (AXES.RB.score >= 0 ? "R" : "B");
     const axisFillPercent = (score) => clamp(50 + (clamp(score, -60, 60) / 60) * 50, 0, 100);
 
@@ -740,6 +809,69 @@
       return map;
     }
 
+    function rowsToObjects(csvText) {
+      const rows = parseCSV(csvText);
+      if (!rows.length) return [];
+      const headers = rows[0].map((h) => String(h || "").trim());
+      return rows.slice(1)
+        .filter((cols) => cols && cols.some((v) => String(v || "").trim() !== ""))
+        .map((cols) => {
+          const obj = {};
+          headers.forEach((h, i) => { obj[h] = String(cols[i] ?? "").trim(); });
+          return obj;
+        });
+    }
+
+    function parseSeconds(value, fallback = 0) {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : fallback;
+    }
+
+    function buildBgmConfigFromCsv(tracksCsv, anchorsCsv, transitionsCsv) {
+      const tracks = {};
+
+      rowsToObjects(tracksCsv).forEach((row) => {
+        const key = pickField(row, ["track", "key", "id"]);
+        const url = pickField(row, ["url", "path", "file"]);
+        if (!key || !url) return;
+        tracks[key] = { url, anchors: {} };
+      });
+
+      rowsToObjects(anchorsCsv).forEach((row) => {
+        const trackKey = pickField(row, ["track", "trackKey", "key"]);
+        const anchor = pickField(row, ["anchor", "anchorName", "name"]);
+        if (!tracks[trackKey] || !anchor) return;
+        tracks[trackKey].anchors[anchor] = {
+          at: parseSeconds(pickField(row, ["time_sec", "time", "sec", "seconds"])),
+          type: pickField(row, ["type", "section", "kind"], "default")
+        };
+      });
+
+      const transitions = {};
+      rowsToObjects(transitionsCsv).forEach((row) => {
+        const fromTrack = pickField(row, ["from_track", "fromTrack", "from"]);
+        const toTrack = pickField(row, ["to_track", "toTrack", "to"]);
+        const target = pickField(row, ["target_anchor", "targetAnchor", "target"]);
+        if (!fromTrack || !toTrack || !target) return;
+
+        const ruleKey = `${fromTrack}->${toTrack}`;
+        const fromAnchor = pickField(row, ["from_anchor", "fromAnchor", "anchor"]);
+        const fromType = pickField(row, ["from_type", "fromType", "type"], "default");
+        const bucket = fromAnchor || fromType || "default";
+
+        transitions[ruleKey] ||= {};
+        transitions[ruleKey][bucket] ||= [];
+        transitions[ruleKey][bucket].push({
+          target,
+          silenceMs: parseSeconds(pickField(row, ["silence_ms", "silenceMs"], "0")),
+          weight: Math.max(1, Math.round(parseSeconds(pickField(row, ["weight"], "1"), 1)))
+        });
+      });
+
+      BGM.tracks = tracks;
+      BGM.transitions = transitions;
+    }
+
     async function fetchFirstText(candidates) {
       const errors = [];
       for (const url of candidates) {
@@ -828,8 +960,186 @@
       return "";
     }
 
+    function playCardSfx() {
+      if (!sfxPool.length) return;
+      const { audio } = sfxPool[Math.floor(Math.random() * sfxPool.length)];
+      audio.pause();
+      audio.currentTime = 0;
+      audio.playbackRate = 1 + (Math.random() * 2 - 1) * SFX.pitchJitter;
+      audio.play().catch(() => {});
+    }
+
+    function unlockSfx() {
+      sfxPool.forEach(({ audio }) => audio.load());
+    }
+
+    function fadeAudio(audio, from, to, durationMs, onDone) {
+      const startedAt = performance.now();
+      const safeDuration = Math.max(1, durationMs);
+      audio.volume = clamp(from, 0, 1);
+      const timer = setInterval(() => {
+        const t = clamp((performance.now() - startedAt) / safeDuration, 0, 1);
+        audio.volume = clamp(from + (to - from) * t, 0, 1);
+        if (t >= 1) {
+          clearInterval(timer);
+          if (onDone) onDone();
+        }
+      }, 40);
+    }
+
+    function sortedAnchors(track) {
+      return Object.entries(track?.anchors || {})
+        .map(([name, anchor]) => ({ name, ...anchor }))
+        .sort((a, b) => a.at - b.at);
+    }
+
+    function currentAnchorForTrack(key) {
+      const track = BGM.tracks[key];
+      if (!track || !currentBgm) return null;
+      return sortedAnchors(track).reduce((current, anchor) => {
+        return anchor.at <= currentBgm.currentTime ? anchor : current;
+      }, null);
+    }
+
+    function nextAnchorForTrack(key) {
+      const track = BGM.tracks[key];
+      if (!track || !currentBgm) return null;
+      return sortedAnchors(track).find((anchor) => anchor.at > currentBgm.currentTime) || null;
+    }
+
+    function chooseTransition(fromKey, toKey) {
+      const fromAnchor = currentAnchorForTrack(fromKey);
+      const fromType = fromAnchor?.type || "default";
+      const rule = BGM.transitions[`${fromKey}->${toKey}`] || {};
+      const options = rule[fromAnchor?.name] || rule[fromType] || rule.default || [{ target: "intro1" }];
+      const weighted = options.flatMap((option) => Array(option.weight || 1).fill(option));
+      return weighted[Math.floor(Math.random() * weighted.length)] || options[0];
+    }
+
+    function bgmEntryTime(key, anchorName) {
+      const targetTrack = BGM.tracks[key];
+      if (!targetTrack) return 0;
+      return targetTrack.anchors?.[anchorName]?.at || 0;
+    }
+
+    function msUntilNextMusicalAnchor(key) {
+      const nextAnchor = nextAnchorForTrack(key);
+      if (!nextAnchor) return 0;
+      const waitMs = (nextAnchor.at - currentBgm.currentTime) * 1000 - BGM.preFadeMs;
+      return Math.min(Math.max(waitMs, 0), BGM.anchorWaitMaxMs);
+    }
+
+    function switchBgm(key, fadeMs = BGM.fadeMs, waitForAnchor = true, lockedTransition = null) {
+      const track = BGM.tracks[key];
+      if (!track) return;
+      if (!musicEnabled) {
+        currentBgmKey = key;
+        if (currentBgm) {
+          currentBgm.pause();
+          currentBgm.currentTime = 0;
+          currentBgm = null;
+        }
+        return;
+      }
+      if (currentBgmKey === key) {
+        if (currentBgm && currentBgm.paused) {
+          currentBgm.play().then(() => {
+            fadeAudio(currentBgm, currentBgm.volume, BGM.volume, fadeMs);
+          }).catch(() => {});
+        }
+        return;
+      }
+
+      const previousKey = currentBgmKey;
+      const transition = lockedTransition || chooseTransition(previousKey, key);
+      const waitMs = waitForAnchor ? msUntilNextMusicalAnchor(previousKey) : 0;
+      if (waitMs > 0) {
+        pendingBgmKey = key;
+        setTimeout(() => {
+          if (pendingBgmKey === key) switchBgm(key, fadeMs, false, transition);
+        }, waitMs);
+        return;
+      }
+      pendingBgmKey = "";
+      currentBgmKey = key;
+
+      const nextBgm = new Audio(track.url);
+      nextBgm.loop = true;
+      nextBgm.preload = "auto";
+      nextBgm.volume = 0;
+      nextBgm.currentTime = bgmEntryTime(key, transition.target);
+
+      const previousBgm = currentBgm;
+      currentBgm = nextBgm;
+
+      const startNextBgm = () => nextBgm.play().then(() => {
+        fadeAudio(nextBgm, 0, BGM.volume, fadeMs);
+      }).catch(() => {});
+
+      if (transition.silenceMs) {
+        setTimeout(startNextBgm, transition.silenceMs);
+      } else {
+        startNextBgm();
+      }
+
+      if (previousBgm) {
+        const previousVolume = previousBgm.volume;
+        fadeAudio(previousBgm, previousVolume, 0, fadeMs, () => {
+          previousBgm.pause();
+          previousBgm.currentTime = 0;
+        });
+      }
+    }
+
+    function chapterBgmForIndex(cardIndex) {
+      if (!cards.length) return "first";
+      if (cardIndex >= 23) return "twoThirds";
+      if (cardIndex >= 8) return "oneThird";
+      return "first";
+    }
+
+    function updateChapterBgm() {
+      switchBgm(chapterBgmForIndex(idx));
+    }
+
+    function setMusicEnabled(enabled) {
+      musicEnabled = enabled;
+      els.musicToggle.setAttribute("aria-pressed", String(enabled));
+      els.musicToggle.textContent = enabled ? "音乐 ON" : "音乐 OFF";
+
+      if (!enabled) {
+        pendingBgmKey = "";
+        if (currentBgm) {
+          fadeAudio(currentBgm, currentBgm.volume, 0, 250, () => {
+            currentBgm.pause();
+          });
+        }
+        return;
+      }
+
+      currentBgmKey = "";
+      switchBgm(gameStarted ? chapterBgmForIndex(idx) : "menu", 500, false);
+    }
+
+    function toggleMusic() {
+      setMusicEnabled(!musicEnabled);
+    }
+
+    function startGame() {
+      gameStarted = true;
+      unlockSfx();
+      els.menu.hidden = true;
+      els.game.hidden = false;
+      switchBgm(chapterBgmForIndex(idx), BGM.fadeMs, false);
+      playCardSfx();
+    }
+
     async function renderCard() {
       if (idx >= cards.length) return finishGame();
+      if (gameStarted) {
+        updateChapterBgm();
+        playCardSfx();
+      }
       const card = cards[idx], left = card.left || {}, right = card.right || {};
       els.body.textContent = card.text || "";
       els.leftChoice.textContent = left.label || "鍚戝乏";
@@ -856,6 +1166,7 @@
 
     function choose(side) {
       const card = cards[idx]; if (!card) return;
+      playCardSfx();
       const choice = side === "left" ? (card.left || {}) : (card.right || {});
       applyEffects(choice.effects || {});
 
@@ -928,7 +1239,9 @@
     }
 
     function bindEvents() {
-      els.startBtn.addEventListener("click", () => { els.menu.hidden = true; els.game.hidden = false; });
+      els.musicToggle.addEventListener("click", toggleMusic);
+      els.menu.addEventListener("pointerdown", () => switchBgm("menu", BGM.fadeMs, false), { once: true });
+      els.startBtn.addEventListener("click", startGame);
       els.restartBtn.addEventListener("click", resetGame);
 
       els.visualDrag.addEventListener("pointerdown", (e) => {
@@ -952,14 +1265,18 @@
       await setBgByBase(SCENE_BASE_BY_RANGE.s1);
 
       try {
-        const [storyConfig, typeCsv] = await Promise.all([
+        const [storyConfig, typeCsv, bgmTracksCsv, bgmAnchorsCsv, bgmTransitionsCsv] = await Promise.all([
           fetchFirstJSON(CONFIG_URLS),
-          fetchFirstText(TYPE_CONFIG_URLS)
+          fetchFirstText(TYPE_CONFIG_URLS),
+          fetchFirstText(BGM_TRACKS_CSV_URLS),
+          fetchFirstText(BGM_ANCHORS_CSV_URLS),
+          fetchFirstText(BGM_TRANSITIONS_CSV_URLS)
         ]);
         let imageConfig = { cards: [] };
         try { imageConfig = await fetchFirstJSON(IMAGE_CONFIG_URLS); } catch (_) {}
         cards = mergeCardsWithImageMapping(storyConfig.cards, imageConfig.cards);
         typeMap = buildTypeMap(typeCsv);
+        buildBgmConfigFromCsv(bgmTracksCsv, bgmAnchorsCsv, bgmTransitionsCsv);
         await resetGame();
       } catch (e) {
         els.body.textContent = e.message;
