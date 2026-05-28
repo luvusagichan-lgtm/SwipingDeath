@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
@@ -7,13 +7,13 @@
   <style>
     @font-face {
       font-family: "GameFont";
-      src: url("./assets/fonts/_思源柔黑体.ttf") format("truetype");
+      src: url("./assets/fonts/GameFont.ttf") format("truetype");
       font-display: swap;
     }
 
     :root {
       --stage-w: min(100vw, calc(100vh * 16 / 9));
-      --stage-h: min(100vh, calc(100vw * 9 / 16));
+      --stage-h: 100vh;
 
       --panel-w: min(34%, 430px);
       --bar-h: 84px;
@@ -49,6 +49,10 @@
 
     .menu {
       z-index: 30;
+      background: #000;
+    }
+
+    .game {
       background:
         linear-gradient(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.28)),
         var(--bg-image) center/cover no-repeat;
@@ -57,13 +61,11 @@
     .menu[hidden], .game[hidden] { display: none; }
 
     .menu-card {
-      width: min(520px, 90vw);
-      padding: 24px;
-      border-radius: 14px;
-      text-align: center;
-      background: rgba(10, 18, 20, 0.72);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: #fff;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
     }
 
     button {
@@ -76,15 +78,49 @@
       color: #1f1f1f;
     }
 
-    /* 固定 16:9 画布 */
+    .menu-bg-image {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .menu-start {
+      position: absolute;
+      left: 50%;
+      top: 73.2%;
+      transform: translateX(-50%);
+      padding: 10px 30px;
+      border-radius: 12px;
+      border: 1px solid rgba(116, 156, 255, 0.7);
+      background: linear-gradient(90deg, #4a67ff 0%, #6d4dff 100%);
+      box-shadow: 0 4px 16px rgba(79, 101, 255, 0.45);
+      color: #fff;
+      font-size: clamp(26px, 1.9vw, 34px);
+      line-height: 1;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: transform .15s ease, filter .15s ease;
+      z-index: 2;
+    }
+
+    .menu-start:hover {
+      transform: translateX(-50%) translateY(-1px);
+      filter: brightness(1.06);
+    }
+
+    /* 鍥哄畾 16:9 鐢诲竷 */
     .stage {
       position: relative;
       width: var(--stage-w);
       height: var(--stage-h);
       overflow: hidden;
-      background:
-        linear-gradient(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.28)),
-        var(--bg-image) center/cover no-repeat;
+      background: transparent;
     }
 
     .choice-bars {
@@ -96,14 +132,14 @@
 
     .side-choice {
       position: absolute;
-      top: 56%;
-      height: 72px;
+      top: 40%;
+      height: 42px;
       display: flex;
       align-items: center;
       background: rgba(255, 255, 255, 0.85);
       color: #222;
       border-radius: 999px;
-      opacity: 0.5;
+      opacity: 1;
       transition: opacity .08s linear, transform .08s linear;
       white-space: nowrap;
       text-overflow: ellipsis;
@@ -114,7 +150,7 @@
 
     .side-left {
       right: calc(50% + var(--panel-w) / 2 - 8px);
-      width: min(44vw, 760px);
+      width: calc(50% - (var(--panel-w) / 2) - 24px);
       justify-content: flex-end;
       padding: 0 24px;
       transform: translateY(-50%);
@@ -122,7 +158,7 @@
 
     .side-right {
       left: calc(50% + var(--panel-w) / 2 - 8px);
-      width: min(44vw, 760px);
+      width: calc(50% - (var(--panel-w) / 2) - 24px);
       justify-content: flex-start;
       padding: 0 24px;
       transform: translateY(-50%);
@@ -139,6 +175,7 @@
       grid-template-rows: var(--bar-h) 1fr var(--bar-h);
       z-index: 20;
       pointer-events: none;
+      overflow: visible;
     }
 
     .top-bar,
@@ -157,16 +194,17 @@
       border-top: 1px solid #c6ccd2;
       place-items: center;
       text-align: center;
-      font-size: clamp(16px, 1.1vw, 22px);
-      white-space: nowrap;
-      text-overflow: ellipsis;
+      font-size: 14px;
+      line-height: 1.25;
+      color: #8f949a;
+      white-space: normal;
       overflow: hidden;
     }
 
     .top-icons {
       height: 100%;
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       align-items: center;
       justify-items: center;
       gap: 0;
@@ -174,19 +212,16 @@
 
     .meter-icon {
       position: relative;
-      width: 54px;
-      height: 54px;
+      width: 42px;
+      height: 42px;
       --fill: 50%;
-      --empty: calc(100% - var(--fill));
-    }
-
-    .meter-icon::before,
-    .meter-icon::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      pointer-events: none;
+      background: linear-gradient(
+        to bottom,
+        #fff 0%,
+        #fff calc(100% - var(--fill)),
+        var(--icon-ink) calc(100% - var(--fill)),
+        var(--icon-ink) 100%
+      );
       -webkit-mask-image: var(--icon-mask);
       mask-image: var(--icon-mask);
       -webkit-mask-size: contain;
@@ -197,44 +232,43 @@
       mask-position: center;
     }
 
-    .meter-icon::before {
-      bottom: 0;
-      height: var(--fill);
-      background: var(--icon-ink);
-    }
-
-    .meter-icon::after {
-      top: 0;
-      height: var(--empty);
-      background: #fff;
-    }
-
     .board {
       background: var(--panel-mid);
       padding: 12px 12px 10px;
       display: grid;
-      grid-template-rows: auto 1fr auto;
+      grid-template-rows: 1fr auto auto;
       gap: 10px;
-      pointer-events: none; /* 整块固定 */
+      pointer-events: none; /* 鏁村潡鍥哄畾 */
+      min-height: 0;
+      overflow: visible;
     }
 
     .story-text {
       color: var(--ink);
-      text-align: center;
-      line-height: 1.6;
+      text-align: justify;
+      text-align-last: center;
+      line-height: 1.5;
       white-space: pre-line;
       font-size: clamp(16px, 1.05vw, 22px);
-      min-height: 92px;
-      display: grid;
-      place-items: center;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-evenly;
+      align-items: center;
       padding: 4px 4px;
+      overflow: hidden;
     }
 
-    /* 只有这块可拖动 */
+    /* 鍙湁杩欏潡鍙嫋鍔?*/
     .visual-wrap {
       pointer-events: auto;
-      width: 100%;
+      width: 80%;
       aspect-ratio: 1 / 1;
+      justify-self: center;
+      align-self: start;
+      margin-top: -14px;
+      position: relative;
+      z-index: 2;
       border-radius: 8px;
       border: 1px solid rgba(0,0,0,.15);
       overflow: hidden;
@@ -258,50 +292,178 @@
       color: #555;
       text-align: center;
       font-size: 14px;
+      line-height: 1.35;
+      white-space: normal;
     }
 
     .result {
       position: fixed;
       inset: 0;
       display: none;
-      place-items: center;
+      place-items: start center;
       z-index: 100;
-      background: rgba(0,0,0,.52);
-      backdrop-filter: blur(4px);
+      background: #f6f4ec;
+      padding: 24px 22px;
+      overflow: hidden;
     }
     .result.show { display: grid; }
 
     .result-card {
-      width: min(620px, 92vw);
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.2);
-      padding: 22px;
-      text-align: center;
-      background: rgba(12,20,24,.94);
-      color: #fff;
+      width: min(60vw, 1200px);
+      max-width: 60vw;
+      height: calc(100vh - 48px);
+      overflow: hidden;
+      border-radius: 20px;
+      border: 1px solid #e3e8eb;
+      box-shadow: 0 10px 34px rgba(20, 28, 36, 0.08);
+      padding: 20px 22px 18px;
+      background: #fff;
+      color: #1f2328;
+    }
+
+    .result-layout {
+      display: grid;
+      grid-template-columns: 384px 1fr;
+      gap: 20px;
+      align-items: start;
+      height: 100%;
+    }
+
+    .result-left {
+      display: grid;
+      place-items: start;
+    }
+
+    .result-frame {
+      width: 384px;
+      border-radius: 12px;
+      border: 2px solid #dde4e8;
+      background: #fff;
+      padding: 8px;
     }
 
     .result-icon {
-      width: 128px;
-      height: 128px;
+      width: 100%;
+      max-width: 360px;
+      height: auto;
+      aspect-ratio: 1 / 1;
       object-fit: contain;
-      margin: 0 auto 10px;
+      margin: 0 auto;
       display: block;
     }
 
     .type-code {
-      font-size: clamp(50px, 6vw, 76px);
-      line-height: 1;
-      margin: 6px 0 12px;
+      font-size: clamp(50px, 5.8vw, 80px);
+      line-height: 1.02;
+      margin: 2px 0 6px;
+      text-align: left;
+    }
+
+    .type-main-title {
+      font-size: clamp(32px, 3vw, 44px);
+      line-height: 1.12;
+      margin: 0 0 10px;
+      text-align: left;
+    }
+
+    .result-pill {
+      display: inline-block;
+      border-radius: 14px;
+      background: #ecfffa;
+      color: #046c69;
+      font-size: 20px;
+      line-height: 1.2;
+      padding: 10px 14px;
+      margin: 8px 0 14px;
+    }
+
+    .type-slogan {
+      margin: 12px 0 8px;
+      font-size: 32px;
+      line-height: 1.35;
+      color: #21344f;
+      white-space: pre-line;
+      text-align: left;
+    }
+
+    .type-subline {
+      margin: 6px 0 10px;
+      font-size: 24px;
+      line-height: 1.45;
+      color: #2c3f59;
+      white-space: pre-line;
+      text-align: left;
+    }
+
+    .type-quickread {
+      margin: 8px 0;
+      font-size: 20px;
+      line-height: 1.55;
+      color: #21344f;
+      white-space: pre-line;
+      text-align: left;
+    }
+
+    .type-all-fields {
+      margin-top: 16px;
+      text-align: left;
+      border-top: 1px solid #e6ebef;
+      padding-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 16px;
+      align-content: start;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .field-item {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.45;
+      color: #2b3441;
+      white-space: pre-line;
+      word-break: break-word;
+      border: 1px solid #edf1f4;
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: #fbfdff;
+    }
+
+    .field-key {
+      display: inline-block;
+      background: #eef7ff;
+      color: #476a8e;
+      border-radius: 999px;
+      padding: 2px 8px;
+      margin-right: 6px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .result-actions {
+      margin-top: 8px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    @media (max-width: 980px) {
+      .result-card { width: 94vw; max-width: 94vw; }
+      .result-layout { grid-template-columns: 1fr; }
+      .result-left { margin-bottom: 8px; }
+      .result-frame { width: min(100%, 340px); }
+      .type-all-fields { grid-template-columns: 1fr; }
+      .type-code, .type-main-title { text-align: center; }
+      .type-slogan, .type-subline, .type-quickread { text-align: center; }
+      .result-actions { justify-content: center; }
     }
   </style>
 </head>
 <body>
   <section class="menu" id="menu">
     <div class="menu-card">
-      <h1>死神值班</h1>
-      <p>左右拖动中间图片进行裁决</p>
-      <button id="startBtn">开始</button>
+      <img class="menu-bg-image" src="./assets/openpage.png" alt="开场页" />
+      <button id="startBtn" class="menu-start" type="button" onclick="document.getElementById('menu').hidden=true;document.getElementById('game').hidden=false;">开始裁决</button>
     </div>
   </section>
 
@@ -322,30 +484,45 @@
           <div class="visual-wrap" id="visualDrag">
             <img id="cardImage" src="./assets/card/card_1.png" alt="card" />
           </div>
-          <div class="hint">向左 / 向右拖动图片选择</div>
+          <div class="hint">使用鼠标向左/右拖动图片选择<br>键盘方向键←/→亦可选择</div>
         </section>
 
-        <footer class="bottom-bar" id="lastChoice">等待你的第一次选择</footer>
+        <footer class="bottom-bar" id="lastChoice">伦理审核报告生成中<br>ID：6202668？</footer>
       </div>
     </div>
   </main>
 
   <section class="result" id="result">
     <div class="result-card">
-      <img class="result-icon" id="resultIcon" src="./assets/icon_type/icon_type_QSNR.png" alt="result" />
-      <div class="type-code" id="resultCode">----</div>
-      <div id="typeNameCn">未命名类型</div>
-      <div id="typeSlogan"></div>
-      <div id="typeSubline"></div>
-      <div id="typeQuickread"></div>
-      <button id="restartBtn">再来一次</button>
+      <div class="result-layout">
+        <aside class="result-left">
+          <div class="result-frame">
+            <img class="result-icon" id="resultIcon" src="./assets/icon_type/icon_type_QSNR.png" alt="result" />
+          </div>
+        </aside>
+        <section class="result-right">
+          <div class="type-code" id="resultCode">----</div>
+          <div class="type-main-title" id="typeNameCn"></div>
+          <div class="type-slogan" id="typeSlogan"></div>
+          <div class="result-pill" id="resultPill"></div>
+          <div class="type-subline" id="typeSubline"></div>
+          <div class="type-quickread" id="typeQuickread"></div>
+          <div class="type-all-fields" id="typeAllFields"></div>
+        </section>
+      </div>
+      <div class="result-actions">
+        <button id="restartBtn">再来一次</button>
+      </div>
     </div>
   </section>
 
   <script>
     const CONFIG_URLS = [
-      "submissions/shinigami/config/shinigami_story_config.json",
-      "shinigami_story_config.json"
+      "shinigami_story_config.json",
+      "submissions/shinigami/config/shinigami_story_config.json"
+    ];
+    const IMAGE_CONFIG_URLS = [
+      "submissions/shinigami/config/shinigami_story_config.json"
     ];
     const TYPE_CONFIG_URLS = [
       "submissions/shinigami/config/shinigami_16types_config.csv",
@@ -380,9 +557,11 @@
       resultIcon: document.getElementById("resultIcon"),
       resultCode: document.getElementById("resultCode"),
       typeNameCn: document.getElementById("typeNameCn"),
+      resultPill: document.getElementById("resultPill"),
       typeSlogan: document.getElementById("typeSlogan"),
       typeSubline: document.getElementById("typeSubline"),
       typeQuickread: document.getElementById("typeQuickread"),
+      typeAllFields: document.getElementById("typeAllFields"),
       restartBtn: document.getElementById("restartBtn")
     };
 
@@ -481,13 +660,31 @@
       return SCENE_BASE_BY_RANGE.s4;
     }
 
+    function mergeCardsWithImageMapping(baseCards, imageCards) {
+      const cardsList = Array.isArray(baseCards) ? baseCards : [];
+      const imageList = Array.isArray(imageCards) ? imageCards : [];
+      if (!imageList.length) return cardsList;
+
+      const imageById = new Map(imageList.map((card) => [String(card?.id ?? ""), card]));
+      return cardsList.map((card, i) => {
+        const id = String(card?.id ?? "");
+        const imageCard = imageById.get(id) || imageList[i] || null;
+        if (!imageCard) return card;
+        return {
+          ...card,
+          imageName: imageCard.imageName || card.imageName || null,
+          imagePath: imageCard.imagePath || card.imagePath || null
+        };
+      });
+    }
+
     async function renderTopIcons() {
       els.topIcons.innerHTML = ICON_BASES.map((_, i) =>
         `<div class="meter-icon" id="meter${i}"></div>`
       ).join("");
 
       for (let i = 0; i < ICON_BASES.length; i++) {
-        const url = await pickFirstImageUrl(ICON_BASES[i]);
+        const url = await pickFirstImageUrl(IMG_EXTS.map((ext) => ICON_BASES[i] + ext));
         const el = document.getElementById(`meter${i}`);
         if (el && url) {
           el.style.setProperty("--icon-mask", `url("${url}")`);
@@ -535,7 +732,9 @@
           type_name_cn: pickField(rowObj, ["type_name_cn", "name_cn", "name", "title"]),
           slogan: pickField(rowObj, ["slogan"]),
           subline: pickField(rowObj, ["subline"]),
-          quickread_body: pickField(rowObj, ["quickread_body", "quickread", "desc", "description"])
+          quickread_body: pickField(rowObj, ["quickread_body", "quickread", "desc", "description"]),
+          all_fields: rowObj,
+          field_order: headers
         };
       }
       return map;
@@ -553,25 +752,91 @@
     async function fetchFirstJSON(candidates) {
       const errors = [];
       for (const url of candidates) {
-        try { const r = await fetch(url, { cache: "no-store" }); if (r.ok) return await r.json(); errors.push(`${url}:${r.status}`); }
+        try {
+          const r = await fetch(url, { cache: "no-store" });
+          if (r.ok) {
+            const raw = await r.text();
+            return parseLenientJSON(raw);
+          }
+          errors.push(`${url}:${r.status}`);
+        }
         catch (e) { errors.push(`${url}:${e.message}`); }
       }
       throw new Error(`JSON 加载失败：${errors.join(" | ")}`);
+    }
+
+    function parseLenientJSON(raw) {
+      let text = String(raw || "").replace(/^\uFEFF/, "");
+      const lines = text.split(/\r?\n/).map((line) => {
+        if (!/^\s*"[^"]+"\s*:\s*"/.test(line)) return line;
+        const quoteCount = (line.match(/"/g) || []).length;
+        if (quoteCount % 2 === 0) return line;
+        const comma = line.lastIndexOf(",");
+        if (comma >= 0) return `${line.slice(0, comma)}"${line.slice(comma)}`;
+        return `${line}"`;
+      });
+      text = lines.join("\n").replace(/,\s*([}\]])/g, "$1");
+      return JSON.parse(text);
     }
 
     function getTypeMeta(code) {
       return typeMap[code] || { type_name_cn: "未命名类型", slogan: "", subline: "", quickread_body: "" };
     }
 
+    function prettyFieldLabel(key) {
+      return String(key || "")
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (m) => m.toUpperCase());
+    }
+
+    function renderAllTypeFields(meta) {
+      const root = els.typeAllFields;
+      if (!root) return;
+      const all = meta?.all_fields || {};
+      const order = Array.isArray(meta?.field_order) ? meta.field_order : Object.keys(all);
+      const hidden = new Set([
+        "type_code", "code", "type", "mbti",
+        "type_name_cn", "name_cn", "name", "title",
+        "slogan", "subline",
+        "quickread_body", "quickread", "desc", "description"
+      ]);
+      const lines = [];
+      for (const k of order) {
+        if (hidden.has(normKey(k))) continue;
+        const val = String(all[k] ?? "").trim();
+        if (!val) continue;
+        lines.push(
+          `<div class="field-item"><span class="field-key">${prettyFieldLabel(k)}:</span><span>${val}</span></div>`
+        );
+      }
+      root.innerHTML = lines.join("");
+    }
+
+    function buildResultPill(meta) {
+      const all = meta?.all_fields || {};
+      const find = (keys) => {
+        for (const k of Object.keys(all)) {
+          if (keys.includes(normKey(k))) return String(all[k] || "").trim();
+        }
+        return "";
+      };
+      const match = find(["match_rate", "match", "score", "rate", "匹配度"]);
+      const hit = find(["hit", "precision", "dimension_hit", "命中", "精准命中"]);
+      if (match && hit) return `匹配度 ${match} · 精准命中 ${hit}`;
+      if (match) return `匹配度 ${match}`;
+      if (hit) return `精准命中 ${hit}`;
+      return "";
+    }
+
     async function renderCard() {
       if (idx >= cards.length) return finishGame();
       const card = cards[idx], left = card.left || {}, right = card.right || {};
-      els.body.textContent = [card.title || "", card.body || card.text || ""].filter(Boolean).join("\n\n");
-      els.leftChoice.textContent = left.label || "向左";
-      els.rightChoice.textContent = right.label || "向右";
+      els.body.textContent = card.text || "";
+      els.leftChoice.textContent = left.label || "鍚戝乏";
+      els.rightChoice.textContent = right.label || "鍚戝彸";
 
-      els.leftChoice.style.opacity = "0.5";
-      els.rightChoice.style.opacity = "0.5";
+      els.leftChoice.style.opacity = "1";
+      els.rightChoice.style.opacity = "1";
       els.leftChoice.style.transform = "translateY(-50%) translateX(0px)";
       els.rightChoice.style.transform = "translateY(-50%) translateX(0px)";
 
@@ -593,7 +858,6 @@
       const card = cards[idx]; if (!card) return;
       const choice = side === "left" ? (card.left || {}) : (card.right || {});
       applyEffects(choice.effects || {});
-      els.lastChoice.textContent = `上个选项：${choice.label || "未命名选择"}`;
 
       const dir = side === "left" ? -1 : 1;
       els.visualDrag.style.transform = `translateX(${dir * (window.innerWidth * 0.45)}px) rotate(${dir * 14}deg)`;
@@ -614,8 +878,11 @@
       const bias = clamp(offsetX / SWIPE_THRESHOLD, -1, 1);
       els.visualDrag.style.transform = `translateX(${offsetX}px) rotate(${bias * 8}deg)`;
 
-      const leftAlpha = clamp(0.5 - 0.5 * bias, 0, 1);
-      const rightAlpha = clamp(0.5 + 0.5 * bias, 0, 1);
+      const t = Math.abs(bias);
+      const nearAlpha = 1;
+      const farAlpha = 1 - t;
+      const leftAlpha = bias < 0 ? nearAlpha : farAlpha;
+      const rightAlpha = bias > 0 ? nearAlpha : farAlpha;
       els.leftChoice.style.opacity = `${leftAlpha}`;
       els.rightChoice.style.opacity = `${rightAlpha}`;
 
@@ -631,8 +898,8 @@
       if (Math.abs(offsetX) >= SWIPE_THRESHOLD) return choose(offsetX < 0 ? "left" : "right");
 
       els.visualDrag.style.transform = "translateX(0px) rotate(0deg)";
-      els.leftChoice.style.opacity = "0.5";
-      els.rightChoice.style.opacity = "0.5";
+      els.leftChoice.style.opacity = "1";
+      els.rightChoice.style.opacity = "1";
       els.leftChoice.style.transform = "translateY(-50%) translateX(0px)";
       els.rightChoice.style.transform = "translateY(-50%) translateX(0px)";
     }
@@ -642,9 +909,13 @@
       await setImgByBase(els.resultIcon, RESULT_ICON_BASE + code, els.resultIcon.src);
       els.resultCode.textContent = code;
       els.typeNameCn.textContent = meta.type_name_cn || "未命名类型";
+      const pill = buildResultPill(meta);
+      els.resultPill.textContent = pill || "死神伦理审查结果已生成";
+      els.resultPill.style.display = "inline-block";
       els.typeSlogan.textContent = meta.slogan || "";
       els.typeSubline.textContent = meta.subline || "";
       els.typeQuickread.textContent = meta.quickread_body || "";
+      renderAllTypeFields(meta);
       els.result.classList.add("show");
     }
 
@@ -653,7 +924,6 @@
       updateIconMeters();
       idx = 0;
       els.result.classList.remove("show");
-      els.lastChoice.textContent = "等待你的第一次选择";
       await renderCard();
     }
 
@@ -682,8 +952,13 @@
       await setBgByBase(SCENE_BASE_BY_RANGE.s1);
 
       try {
-        const [storyConfig, typeCsv] = await Promise.all([fetchFirstJSON(CONFIG_URLS), fetchFirstText(TYPE_CONFIG_URLS)]);
-        cards = Array.isArray(storyConfig.cards) ? storyConfig.cards : [];
+        const [storyConfig, typeCsv] = await Promise.all([
+          fetchFirstJSON(CONFIG_URLS),
+          fetchFirstText(TYPE_CONFIG_URLS)
+        ]);
+        let imageConfig = { cards: [] };
+        try { imageConfig = await fetchFirstJSON(IMAGE_CONFIG_URLS); } catch (_) {}
+        cards = mergeCardsWithImageMapping(storyConfig.cards, imageConfig.cards);
         typeMap = buildTypeMap(typeCsv);
         await resetGame();
       } catch (e) {
@@ -695,3 +970,5 @@
   </script>
 </body>
 </html>
+
+

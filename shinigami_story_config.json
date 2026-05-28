@@ -1,0 +1,902 @@
+{
+  "source": "shinigami_story_config.xlsx",
+  "sheet": "Config",
+  "cards": [
+    {
+      "sequence": 1,
+      "id": "01",
+      "tag": null,
+      "text": "新人死神你好，\n从现在起，你来决定人类的生死。\n左右滑动做出你的选择。",
+      "left": {
+        "label": "何意味？",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "02"
+      },
+      "right": {
+        "label": "什么时候开杀，挺急的",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "02"
+      },
+      "autoNext": null,
+      "note": null
+    },
+    {
+      "sequence": 2,
+      "id": "02",
+      "tag": null,
+      "text": "我是你的带教。\n人总会死。死神的工作是，\n在两组将死之人中选择，让谁先死。",
+      "left": {
+        "label": "我也要死吗",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "03"
+      },
+      "right": {
+        "label": "死神也得打工吗",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "03"
+      },
+      "autoNext": null,
+      "note": null
+    },
+    {
+      "sequence": 3,
+      "id": "03",
+      "tag": null,
+      "text": "岗规三条：不弃选，不拖延，不找完美答案。\n你只负责选择，代价会自然发生。\n不要为活人考虑太多，\n尤其是……与你有关的人。",
+      "left": {
+        "label": "记住了",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 0,
+          "RB": 4
+        },
+        "next": "04"
+      },
+      "right": {
+        "label": "听着就头大",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 0,
+          "RB": -4
+        },
+        "next": "04"
+      },
+      "autoNext": null,
+      "note": null
+    },
+    {
+      "sequence": 4,
+      "id": "04",
+      "tag": null,
+      "text": "你说头顶一直有四个奇怪的图标？\n说什么傻话，有800个图标也得干活。\n先来个简单的测试：\n让三人死，还是让一人死？",
+      "left": {
+        "label": "选三人",
+        "effects": {
+          "QI": 8,
+          "SP": 0,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "05"
+      },
+      "right": {
+        "label": "选一人",
+        "effects": {
+          "QI": -8,
+          "SP": 0,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "05"
+      },
+      "autoNext": null,
+      "note": null
+    },
+    {
+      "sequence": 5,
+      "id": "05",
+      "tag": null,
+      "text": "你选的人死掉了。\n工作不难，对吧？\n听说转正测试要做一场伦理审核，具体内容未知。\n还是入职更重要，先看下一题吧。",
+      "left": {
+        "label": "收到☕️🌹",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 0,
+          "RB": 4
+        },
+        "next": "06"
+      },
+      "right": {
+        "label": "话要说清楚吧！",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 0,
+          "RB": -4
+        },
+        "next": "06"
+      },
+      "autoNext": null,
+      "note": null
+    },
+    {
+      "sequence": 6,
+      "id": "06",
+      "tag": null,
+      "text": "第二题。海难来了，\n你让一个家庭活下来，\n还是一群陌生人活下来？\n只能保一边。",
+      "left": {
+        "label": "当然是一家人！",
+        "effects": {
+          "QI": 0,
+          "SP": 8,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "07"
+      },
+      "right": {
+        "label": "我选一群陌生人",
+        "effects": {
+          "QI": 0,
+          "SP": -8,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "07"
+      },
+      "autoNext": null,
+      "note": null
+    },
+    {
+      "sequence": 7,
+      "id": "07",
+      "tag": null,
+      "text": "第三题。两盏灯代表两条命，\n按流程，要先灭左再灭右。但右边马上要熄灭了，\n来不及操作会扣绩效。你也可以忽视流程，\n两边同时按灭，但会留下记录。",
+      "left": {
+        "label": "遵守流程",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 4,
+          "RB": 8
+        },
+        "next": "08"
+      },
+      "right": {
+        "label": "不管，都给我灭",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": -4,
+          "RB": -8
+        },
+        "next": "08"
+      },
+      "autoNext": null,
+      "note": null
+    },
+    {
+      "sequence": 8,
+      "id": "08",
+      "tag": null,
+      "text": "很好，你已经迷恋上做选择的感觉了。\n生命裁决之刃交给你，\n开始正式的入职测试吧。",
+      "left": {
+        "label": "收到☕️🌹",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 0,
+          "RB": 4
+        },
+        "next": "09"
+      },
+      "right": {
+        "label": "这就算教完了！？",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 0,
+          "RB": -4
+        },
+        "next": "09"
+      },
+      "autoNext": null,
+      "note": null
+    },
+    {
+      "sequence": 9,
+      "id": "09",
+      "tag": null,
+      "text": "单人间：一个刚做完整形手术的网红，\n资产千万，正在直播。\n四人间：四个公交事故伤者，资产寥寥。\n电路失修，只能保一边。",
+      "left": {
+        "label": "先看单人间",
+        "effects": {
+          "QI": -4,
+          "SP": 0,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "10-L"
+      },
+      "right": {
+        "label": "先看四人间",
+        "effects": {
+          "QI": 4,
+          "SP": 0,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "10-R"
+      },
+      "autoNext": null,
+      "note": null
+    },
+    {
+      "sequence": 10,
+      "id": "10-L",
+      "tag": null,
+      "text": "林辰，全身多处整形，据说为人刻薄。\n但资助了数个唇腭裂儿童的手术费。\n他说：我知道被嘲笑长相是什么滋味。",
+      "left": {
+        "label": "君子论迹不论心",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 4,
+          "RB": 0
+        },
+        "next": "10-R"
+      },
+      "right": {
+        "label": "MCN公司的洗白手段吧",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": -4,
+          "RB": 0
+        },
+        "next": "10-R"
+      },
+      "autoNext": "10-R",
+      "note": "下一个自动跳转 10-R（双卡阅读后收束到 12）"
+    },
+    {
+      "sequence": 11,
+      "id": "10-R",
+      "tag": null,
+      "text": "四人分别是\n退伍老兵、电焊工、收银员、大学生。\n他们不是纯粹的善人，也不是恶人。\n你觉得他们值得被救吗？",
+      "left": {
+        "label": "四个比一个更有价值",
+        "effects": {
+          "QI": 8,
+          "SP": 0,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "10-L"
+      },
+      "right": {
+        "label": "我觉得未必",
+        "effects": {
+          "QI": -8,
+          "SP": 0,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "10-L"
+      },
+      "autoNext": "10-L",
+      "note": "下一个自动跳转 10-L（双卡阅读后收束到 12）"
+    },
+    {
+      "sequence": 12,
+      "id": "12",
+      "tag": null,
+      "text": "林辰引导过网暴，也资助过孩子。\n四人间那个老兵的腿是在抗洪时断的。\n其他人的故事，你一概不知。",
+      "left": {
+        "label": "你想左右我的选择？",
+        "effects": {
+          "QI": 0,
+          "SP": -4,
+          "FN": 0,
+          "RB": -4
+        },
+        "next": "13"
+      },
+      "right": {
+        "label": "你好像很在意这些人？",
+        "effects": {
+          "QI": 0,
+          "SP": 4,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "13"
+      },
+      "autoNext": null,
+      "note": null
+    },
+    {
+      "sequence": 13,
+      "id": "13",
+      "tag": null,
+      "text": "没时间说更多了。\n你选哪边？",
+      "left": {
+        "label": "林辰死",
+        "effects": {
+          "QI": 8,
+          "SP": 0,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "14-L"
+      },
+      "right": {
+        "label": "四人死",
+        "effects": {
+          "QI": -8,
+          "SP": 0,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "14-R"
+      },
+      "autoNext": null,
+      "note": null
+    },
+    {
+      "sequence": 14,
+      "id": "14-L",
+      "tag": null,
+      "text": "林辰的遗嘱公证有效：\n死后所有资产捐给唇腭裂基金。\n评论区有人道惋惜，有人说作秀。",
+      "left": {
+        "label": "……他有点可怜",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 4,
+          "RB": 0
+        },
+        "next": "16"
+      },
+      "right": {
+        "label": "演着演着就成真了",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": -4,
+          "RB": 0
+        },
+        "next": "16"
+      },
+      "autoNext": "16",
+      "note": "这张卡结束后跳转 16"
+    },
+    {
+      "sequence": 15,
+      "id": "14-R",
+      "tag": null,
+      "text": "四人死后，保洁阿姨来到一张床位前，\n放了一朵花。\n那里曾躺着退伍老兵，没有家人，无人祭奠。",
+      "left": {
+        "label": "她人真好",
+        "effects": {
+          "QI": 0,
+          "SP": 4,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "16"
+      },
+      "right": {
+        "label": "死神无需怜惜人间",
+        "effects": {
+          "QI": 0,
+          "SP": -4,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "16"
+      },
+      "autoNext": "16",
+      "note": "这张卡结束后跳转 16"
+    },
+    {
+      "sequence": 16,
+      "id": "16",
+      "tag": null,
+      "text": "亲手终结生命，感觉如何？\n顺带一提，那位保洁阿姨叫周秀兰，从小失声。\n地砖松动的提示就是她贴的。",
+      "left": {
+        "label": "一个凡人值得你特意提起？",
+        "effects": {
+          "QI": 0,
+          "SP": -4,
+          "FN": 0,
+          "RB": 4
+        },
+        "next": "17"
+      },
+      "right": {
+        "label": "你在影射什么？",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 0,
+          "RB": -4
+        },
+        "next": "17"
+      },
+      "autoNext": null,
+      "note": null
+    },
+    {
+      "sequence": 17,
+      "id": "17",
+      "tag": null,
+      "text": "外科医生在手术室急救。\n后勤人员在地下室抢修线路。\n二人同时面临危险。",
+      "left": {
+        "label": "调出医生资料",
+        "effects": {
+          "QI": 0,
+          "SP": -4,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "18-L"
+      },
+      "right": {
+        "label": "调出后勤资料",
+        "effects": {
+          "QI": 0,
+          "SP": 4,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "18-R"
+      },
+      "autoNext": null,
+      "note": null
+    },
+    {
+      "sequence": 18,
+      "id": "18-L",
+      "tag": null,
+      "text": "韩决，外科医生。\n手部偶发抽动，疑似亨廷顿舞蹈症早期。\n医院人手紧张，他在给公交车司机做重伤手术。\n那个司机，是你上轮审判车祸的幸存者，\n可能知道肇事者是谁。",
+      "left": {
+        "label": "医生得病还敢主刀？",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 0,
+          "RB": 4
+        },
+        "next": "18-R"
+      },
+      "right": {
+        "label": "确诊前他别无选择",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 0,
+          "RB": -4
+        },
+        "next": "18-R"
+      },
+      "autoNext": "18-R",
+      "note": "下一个自动跳转 18-R（双卡阅读后收束到 20）"
+    },
+    {
+      "sequence": 19,
+      "id": "18-R",
+      "tag": null,
+      "text": "王淑云，后勤人员。\n如果她修不好电路，今晚重症室就会断电。\n保洁周秀兰在家政公司接夜单，\n王淑云是她的紧急联系人。",
+      "left": {
+        "label": "王淑云身上有两份责任",
+        "effects": {
+          "QI": 0,
+          "SP": 4,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "18-L"
+      },
+      "right": {
+        "label": "这种关系，超乎同事了",
+        "effects": {
+          "QI": 0,
+          "SP": -4,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "18-L"
+      },
+      "autoNext": "18-L",
+      "note": "下一个自动跳转 18-L（双卡阅读后收束到 20）"
+    },
+    {
+      "sequence": 20,
+      "id": "20",
+      "tag": null,
+      "text": "带教的终端亮了。\n似乎写着什么「裁决模式」、「记录中」。\n她瞄了一眼，把屏幕扣在桌上。",
+      "left": {
+        "label": "不要关心别人的隐私",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 0,
+          "RB": 4
+        },
+        "next": "21"
+      },
+      "right": {
+        "label": "什么裁决，跟我有关？",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "21"
+      },
+      "autoNext": null,
+      "note": null
+    },
+    {
+      "sequence": 21,
+      "id": "21",
+      "tag": null,
+      "text": "韩决死，重伤的司机会死在手术台上。\n王淑云死，一整层重症病房会断电。\n现在轮到你来导演死亡了。",
+      "left": {
+        "label": "带走韩决",
+        "effects": {
+          "QI": 8,
+          "SP": 0,
+          "FN": -4,
+          "RB": 0
+        },
+        "next": "22-L"
+      },
+      "right": {
+        "label": "带走王淑云",
+        "effects": {
+          "QI": -8,
+          "SP": 0,
+          "FN": 4,
+          "RB": 0
+        },
+        "next": "22-R"
+      },
+      "autoNext": null,
+      "note": null
+    },
+    {
+      "sequence": 22,
+      "id": "22-L",
+      "tag": null,
+      "text": "韩决和司机都死在了手术室。\n医院人手更紧缺了。\n车祸肇事凶手从此逍遥法外。",
+      "left": {
+        "label": "我是不是选错了",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 4,
+          "RB": 0
+        },
+        "next": "24"
+      },
+      "right": {
+        "label": "至少另一边保住了",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": -4,
+          "RB": 0
+        },
+        "next": "24"
+      },
+      "autoNext": "24",
+      "note": "这张卡结束后跳转 24"
+    },
+    {
+      "sequence": 23,
+      "id": "22-R",
+      "tag": null,
+      "text": "王淑云死了，线路断了。\n重症室多名患者终止了生命体征。",
+      "left": {
+        "label": "我后悔了",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 0,
+          "RB": 4
+        },
+        "next": "24"
+      },
+      "right": {
+        "label": "是电路老化的错",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 0,
+          "RB": -4
+        },
+        "next": "24"
+      },
+      "autoNext": "24",
+      "note": "这张卡结束后跳转 24"
+    },
+    {
+      "sequence": 24,
+      "id": "24",
+      "tag": null,
+      "text": "周秀兰在楼梯间捡到了王淑云的工牌。\n她擦了擦上面的灰，放进了自己的口袋。",
+      "left": {
+        "label": "她还好吗",
+        "effects": {
+          "QI": 0,
+          "SP": 4,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "25"
+      },
+      "right": {
+        "label": "周秀兰有点奇怪",
+        "effects": {
+          "QI": 0,
+          "SP": -4,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "25"
+      },
+      "autoNext": null,
+      "note": null
+    },
+    {
+      "sequence": 25,
+      "id": "25",
+      "tag": null,
+      "text": "恭喜你，走到最后。\n现在有两个人的心脏即将同时停搏。\n其中一个人……你见过。",
+      "left": {
+        "label": "等等，不会是——！？",
+        "effects": {
+          "QI": 0,
+          "SP": 8,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "26-L"
+      },
+      "right": {
+        "label": "谁都会死，不是吗",
+        "effects": {
+          "QI": 0,
+          "SP": -4,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "26-R"
+      },
+      "autoNext": null,
+      "note": null
+    },
+    {
+      "sequence": 26,
+      "id": "26-L",
+      "tag": null,
+      "text": "周秀兰，中年丧女，在医院做了二十年保洁。\n她好心提醒病人注意出行，也祭奠过那位老兵。\n第二组审判的王淑云，是她唯一的朋友。",
+      "left": {
+        "label": "厄运专找苦命人",
+        "effects": {
+          "QI": 0,
+          "SP": 4,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "26-R"
+      },
+      "right": {
+        "label": "她是不是人间版的死神",
+        "effects": {
+          "QI": 0,
+          "SP": -4,
+          "FN": 0,
+          "RB": 0
+        },
+        "next": "26-R"
+      },
+      "autoNext": "26-R",
+      "note": "下一个自动跳转 26-R（双卡阅读后收束到 28）"
+    },
+    {
+      "sequence": 27,
+      "id": "26-R",
+      "tag": null,
+      "text": "陈晋原，行政副院长，\n他再次否决了电路翻修计划。\n确切地说，有人用电力公司的评估报告把他的申请打回来。在没发生事故之前，让医院保持现状。",
+      "left": {
+        "label": "照片上的数字好熟悉",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 4,
+          "RB": 0
+        },
+        "next": "26-L"
+      },
+      "right": {
+        "label": "什么叫再次？",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": -4,
+          "RB": 0
+        },
+        "next": "26-L"
+      },
+      "autoNext": "26-L",
+      "note": "下一个自动跳转 26-L（双卡阅读后收束到 28）"
+    },
+    {
+      "sequence": 28,
+      "id": "28",
+      "tag": null,
+      "text": "陈晋原也曾是我入职测试的题目。\n我们是同学。我知道，他是个负责人的好人。\n现在他再次成为题目，也许是对我的惩罚。",
+      "left": {
+        "label": "你犯了心软的错",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": -4,
+          "RB": 4
+        },
+        "next": "29"
+      },
+      "right": {
+        "label": "什么惩罚？",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 4,
+          "RB": -4
+        },
+        "next": "29"
+      },
+      "autoNext": null,
+      "note": null
+    },
+    {
+      "sequence": 29,
+      "id": "29",
+      "tag": null,
+      "text": "别管了，生命裁决之刃在你手上。\n两人同时心衰，急救资源只够救一个。\n你救谁，谁就活。",
+      "left": {
+        "label": "救周秀兰",
+        "effects": {
+          "QI": 0,
+          "SP": 8,
+          "FN": -8,
+          "RB": 0
+        },
+        "next": "30-L"
+      },
+      "right": {
+        "label": "救陈晋原",
+        "effects": {
+          "QI": 0,
+          "SP": -8,
+          "FN": 8,
+          "RB": 0
+        },
+        "next": "30-R"
+      },
+      "autoNext": null,
+      "note": null
+    },
+    {
+      "sequence": 30,
+      "id": "30-L",
+      "tag": null,
+      "text": "陈晋原死了，医院照常运转。\n但那条反复驳回翻修预算的签字链，也彻底断了。\n后来的某天，一场电力事故带走了更多无辜的人。",
+      "left": {
+        "label": "我选对了吗",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 4,
+          "RB": -4
+        },
+        "next": "32"
+      },
+      "right": {
+        "label": "我只是履行死神的职责",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": -4,
+          "RB": 4
+        },
+        "next": "32"
+      },
+      "autoNext": "32",
+      "note": "这张卡结束后跳转 32"
+    },
+    {
+      "sequence": 31,
+      "id": "30-R",
+      "tag": null,
+      "text": "周秀兰死了，陈晋原活了下来。\n电路翻修预算仍在流程里打转。\n风险没有被解决，只是被延期了。",
+      "left": {
+        "label": "我选对了吗",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 4,
+          "RB": -4
+        },
+        "next": "32"
+      },
+      "right": {
+        "label": "我只是履行死神的职责",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": -4,
+          "RB": 4
+        },
+        "next": "32"
+      },
+      "autoNext": "32",
+      "note": "这张卡结束后跳转 32"
+    },
+    {
+      "sequence": 32,
+      "id": "32",
+      "tag": null,
+      "text": "入职测试，你通过了。\n收好生命裁决之刃，\n接下来将公布你的死神性格类型……",
+      "left": {
+        "label": "等一下，我有话要说！",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 0,
+          "RB": -4
+        },
+        "next": "END"
+      },
+      "right": {
+        "label": "你和周秀兰是什么关系？",
+        "effects": {
+          "QI": 0,
+          "SP": 0,
+          "FN": 0,
+          "RB": 4
+        },
+        "next": "END"
+      },
+      "autoNext": null,
+      "note": null
+    }
+  ]
+}
