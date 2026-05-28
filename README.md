@@ -1,6 +1,7 @@
 # SwipingDeath
 
 ## Web Demo (Standalone)
+https://luvusagichan-lgtm.github.io/SwipingDeath/
 
 Current playable demo is fully web-based, using:
 
